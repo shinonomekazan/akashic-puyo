@@ -1,0 +1,94 @@
+{
+  "export-time": "17/12/2025, 15:51:35",
+  "objects": [
+    {
+      "id": "Root",
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "type": "layer"
+    },
+    {
+      "id": "background",
+      "parent": "Root",
+      "imagepath": "/assets/bg-summer.png",
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "width": 906,
+      "height": 572,
+      "xpivot": 0,
+      "ypivot": 0,
+      "xscale": 1,
+      "yscale": 1,
+      "type": "image"
+    },
+    {
+      "id": "dotnet_bot.scale-400",
+      "parent": "Root",
+      "imagepath": "/assets/mam-cay.png",
+      "visible": true,
+      "x": 286.22,
+      "y": 243.99,
+      "width": 194,
+      "height": 230,
+      "xpivot": 0,
+      "ypivot": 0,
+      "xscale": 0.3712,
+      "yscale": 0.3712,
+      "type": "image"
+    },
+    {
+      "id": "C\u1EA5u h\u00ECnh",
+      "parent": "Root",
+      "imagepath": "/assets/bacsi.png",
+      "visible": true,
+      "x": 160,
+      "y": 186.67,
+      "width": 96,
+      "height": 154,
+      "xpivot": 0,
+      "ypivot": 0,
+      "xscale": 1,
+      "yscale": 1,
+      "type": "image"
+    },
+    {
+      "id": "mat troi",
+      "parent": "Root",
+      "imagepath": "/assets/sun.png",
+      "visible": true,
+      "x": 197.32999999999998,
+      "y": 168.00334350585936,
+      "width": 150,
+      "height": 150,
+      "xpivot": 0.5,
+      "ypivot": 0.5,
+      "xscale": 1,
+      "yscale": 1,
+      "type": "image"
+    },
+    {
+      "id": "Resources (2)",
+      "parent": "Root",
+      "imagepath": "/assets/mam-cay-0.png",
+      "visible": true,
+      "x": 650.34,
+      "y": 218.66,
+      "width": 50,
+      "height": 50,
+      "xpivot": 0,
+      "ypivot": 0,
+      "xscale": 1,
+      "yscale": 1,
+      "type": "image"
+    },
+    {
+      "id": "H\u1EC7 th\u1ED1ng (Root)",
+      "visible": false,
+      "x": 0,
+      "y": 0,
+      "type": "layer"
+    }
+  ]
+}

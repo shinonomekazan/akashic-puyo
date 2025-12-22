@@ -1,0 +1,17 @@
+{
+	"compilerOptions": {
+		"target": "ES5",
+		"lib": ["es5", "dom", "es2018"],
+		"noImplicitAny": true,
+		"module": "commonjs",
+		"outDir": "build",
+		"types": [],
+		"sourceMap": true,
+		"allowUmdGlobalAccess": true,
+		"noImplicitUseStrict": true,
+		"esModuleInterop": true,
+		"resolveJsonModule": true
+	},
+	"files": ["node_modules/@akashic/akashic-engine/index.runtime.d.ts"],
+	"include": ["src/**/*.ts", "typings/**/*.d.ts"]
+}

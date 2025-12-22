@@ -1,0 +1,97 @@
+{
+	"width": 1280,
+	"height": 720,
+	"fps": 30,
+	"main": "./script/bundle.js",
+	"assets": {
+		"bundle": {
+			"type": "script",
+			"path": "script/bundle.js",
+			"global": true
+		},
+		"assets/bg-summer.png": {
+			"type": "image",
+			"path": "assets/bg-summer.png",
+			"width": 906,
+			"height": 572
+		},
+		"assets/mam-cay-0.png": {
+			"type": "image",
+			"path": "assets/mam-cay-0.png",
+			"width": 74,
+			"height": 75
+		},
+		"assets/mam-cay.png": {
+			"type": "image",
+			"path": "assets/mam-cay.png",
+			"width": 194,
+			"height": 230
+		},
+		"assets/sun.png": {
+			"type": "image",
+			"path": "assets/sun.png",
+			"width": 277,
+			"height": 284
+		},
+		"assets/u-dat-hoa-0.png": {
+			"type": "image",
+			"path": "assets/u-dat-hoa-0.png",
+			"width": 48,
+			"height": 82
+		},
+		"assets/u-dat-hoa.png": {
+			"type": "image",
+			"path": "assets/u-dat-hoa.png",
+			"width": 194,
+			"height": 364
+		},
+		"assets/u-dat-va-mamcay.png": {
+			"type": "image",
+			"path": "assets/u-dat-va-mamcay.png",
+			"width": 194,
+			"height": 230
+		},
+		"assets/u-dat-va-nuoc.png": {
+			"type": "image",
+			"path": "assets/u-dat-va-nuoc.png",
+			"width": 194,
+			"height": 178
+		},
+		"assets/u-dat.png": {
+			"type": "image",
+			"path": "assets/u-dat.png",
+			"width": 194,
+			"height": 178
+		},
+		"assets/project_layout.json": {
+			"type": "text",
+			"path": "assets/project_layout.json"
+		},
+		"assets/test.json": {
+			"type": "text",
+			"path": "assets/test.json"
+		},
+		"assets/bacsi.png": {
+			"type": "image",
+			"path": "assets/bacsi.png",
+			"width": 96,
+			"height": 154
+		}
+	},
+	"moduleMainScripts": {},
+	"environment": {
+		"sandbox-runtime": "3",
+		"akashic-runtime": {
+			"version": "~3.7.0-0",
+			"flavor": "-canvas"
+		},
+		"nicolive": {
+			"supportedModes": [
+				"single",
+				"multi"
+			]
+		}
+	},
+	"globalScripts": [],
+	"defaultLoadingScene": "none"
+}
