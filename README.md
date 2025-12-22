@@ -1,5 +1,6 @@
 ## Game: 
-<img width="476" alt="image" src="https://github.com/user-attachments/assets/e002bb0c-76db-4208-8856-ed252bc2d538" />
+<img width="956" alt="image" src="screenshot.jpg">
+
 
 
 ## 利用方法
