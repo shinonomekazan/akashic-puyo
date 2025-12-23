@@ -5,7 +5,7 @@ import { FlowCreator } from "./flowCreator";
 import { GameBoard } from "./gameBoard";
 import { Player } from "./Player";
 import { UIManager } from "./uiManager";
-import { gameOver_sender, move_sender } from "./sender";
+import { move_sender } from "./sender";
 
 export class MainScene extends g.Scene {
 	flowManager: FlowManager;
@@ -27,6 +27,7 @@ export class MainScene extends g.Scene {
 
 		this.onKeyDownHandler = (ev: any) => {
 			if (!this.isGameStarted) return;
+			console.log('1--> ', this.game.selfId);
 			this.game.raiseEvent(new g.MessageEvent({ type: "input", key: ev.key, id: this.game.selfId }));
 		};
 
@@ -35,12 +36,19 @@ export class MainScene extends g.Scene {
 	};
 
 	private onGameLoad() {
+		console.log('gameloaded');
 		this.uiManager = new UIManager(this);
+		this.uiManager.onControlClick.add(key => {
+			if (!this.isGameStarted) return;
+			console.log('2--> ', this.game.selfId);
+			this.game.raiseEvent(new g.MessageEvent({ type: "input", key: key, id: this.game.selfId }));
+		});
 		this.flowCreator = new FlowCreator(this.flowManager, this.uiManager, this);
-
 		this.uiManager.onLobbyClick.add(() => {
 			const myPlayer = this.players[g.game.selfId];
-			if (myPlayer && !myPlayer.ready) {
+			if (!myPlayer) {
+				g.game.raiseEvent(new g.MessageEvent({ type: "join" }));
+			} else if (!myPlayer.ready) {
 				g.game.raiseEvent(new g.MessageEvent({ type: "ready" }));
 			}
 		});
@@ -49,39 +57,11 @@ export class MainScene extends g.Scene {
 			g.game.raiseEvent(new g.MessageEvent({ type: "restart" }));
 		});
 
-		g.game.onJoin.add((player) => {
-			console.log('count join ', g.game.joinedPlayerIds.length);
+		this.refreshLobbyState();
 
-			if (!this.players[player.player.id]) {
-				if (Object.keys(this.players).length < 2) {
-					this.createPlayer(player.player.id);
-				}
-			}
-
-			this.refreshLobbyState();
-		});
-
-		g.game.onLeave.add((player) => {
-			const leftId = player.player.id;
-			if (this.players[leftId]) {
-				const leftPlayer = this.players[leftId];
-				delete this.players[leftId];
-
-				if (Object.keys(this.players).length === 0) {
-					this.isGameStarted = false;
-					this.dropTimers = [0, 0];
-					this.flowManager.fireAsync(FlowEventName.ResetGame);
-				} else {
-					if (this.isGameStarted) {
-						this.flowManager.fireAsync(FlowEventName.GameOver, new gameOver_sender(leftPlayer.pIdx, "disconnect"));
-					} else {
-						this.refreshLobbyState();
-					}
-				}
-			}
-		});
-
+		console.log('reg widdown ', typeof window !== "undefined");
 		if (typeof window !== "undefined") {
+
 			window.addEventListener('keydown', this.onKeyDownHandler);
 		}
 
@@ -89,7 +69,7 @@ export class MainScene extends g.Scene {
 			if (!this.isGameStarted) return;
 			Object.keys(this.players).forEach(id => {
 				const player = this.players[id];
-				const board = player.board;
+				const board = GameBoard.get(id);
 				if (!board || board.isPaused || board.isAnimating) return;
 
 				this.dropTimers[player.pIdx] += 1 / g.game.fps;
@@ -136,7 +116,6 @@ export class MainScene extends g.Scene {
 				if (myPlayer.ready) {
 					textKey = "wait_opp_action";
 					enableButton = false;
-					showWaitSprite = true;
 				} else {
 					textKey = "click_ready";
 					enableButton = true;
@@ -147,8 +126,8 @@ export class MainScene extends g.Scene {
 				textKey = "room_full";
 				enableButton = false;
 			} else {
-				textKey = "join_room";
-				enableButton = false;
+				textKey = "click_ready";
+				enableButton = true;
 			}
 		}
 
@@ -161,14 +140,22 @@ export class MainScene extends g.Scene {
 		const currentCount = Object.keys(this.players).length;
 		if (currentCount >= 2) return null;
 
-		const board = GameBoard.createPlayerBoard(id, currentCount, this, this.uiManager.gameLayer, this.flowManager);
-		const player = new Player(id, currentCount, board, this.flowManager);
+		GameBoard.createPlayerBoard(id, currentCount, this, this.uiManager.gameLayer, this.flowManager);
+		const player = new Player(id, currentCount, this.flowManager);
 		this.players[id] = player;
+
+		if (id === g.game.selfId) {
+			for (let pid in this.players) {
+				GameBoard.get(pid).renderBoard();
+			}
+			this.uiManager.refreshScoreLayout();
+		}
 
 		return player;
 	}
 
 	private handleMessage(ev: g.MessageEvent) {
+		console.log('onmessage');
 		if (!ev.data) return;
 
 		if (ev.data.type === "restart") {
@@ -179,7 +166,7 @@ export class MainScene extends g.Scene {
 		}
 
 		if (!ev.player || !ev.player.id) return;
-
+		console.log('move ', ev.player.id);
 		const idOfPlayerSend = ev.player.id;
 		const player = this.players[idOfPlayerSend];
 
@@ -193,6 +180,18 @@ export class MainScene extends g.Scene {
 	}
 
 	private handleLobbyMessage(senderId: string, data: any) {
+		if (data.type === "join") {
+			const newPlayer = this.createPlayer(senderId);
+			if (newPlayer) {
+				newPlayer.ready = true;
+			}
+
+			this.checkAndStartGame();
+
+			if (!this.isGameStarted) {
+				this.refreshLobbyState();
+			}
+		}
 		if (data.type === "ready") {
 			if (this.players[senderId]) {
 				this.players[senderId].ready = true;

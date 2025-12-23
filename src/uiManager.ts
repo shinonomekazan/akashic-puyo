@@ -1,3 +1,4 @@
+import { Button } from "./button";
 import { GameBoard } from "./gameBoard";
 import { Localization } from "./localization";
 
@@ -5,8 +6,10 @@ export class UIManager {
 	public layoutRoot: g.E;
 	public gameLayer: g.E;
 	public uiLayer: g.E;
+	public controllerLayer: g.E;
 	public onLobbyClick: g.Trigger<void> = new g.Trigger();
 	public onRestartClick: g.Trigger<void> = new g.Trigger();
+	public onControlClick: g.Trigger<string> = new g.Trigger();
 
 	private scene: g.Scene;
 	private lobbyContainer: g.E;
@@ -32,6 +35,51 @@ export class UIManager {
 		this.createLobbyUI();
 		this.createScoreUI();
 		this.createGameOverUI();
+		this.createUIController();
+	}
+	private createUIController() {
+		const scene = this.scene;
+		this.controllerLayer = new g.E({ scene: scene, parent: this.layoutRoot });
+		let left = this.createButton("ArrowLeft", "/assets/ui/arrow-left.png", 100, 100);
+		let right = this.createButton("ArrowRight", "/assets/ui/arrow-right.png", 100, 150);
+		let up = this.createButton("ArrowUp", "/assets/ui/arrow-up.png", 100, 155);
+		let down = this.createButton("ArrowDown", "/assets/ui/arrow-down.png", 100, 160);
+		this.placeEntitiesAroundCenter(scene, { x: 100, y: g.game.height - 150 }, [
+			up, down, left, right
+		])
+	}
+	private placeEntitiesAroundCenter(scene: g.Scene, center: g.CommonOffset, img: g.E[]) {
+		const offset = 70;
+		const positions: g.CommonOffset[] = [
+			{ x: center.x, y: center.y - offset }, // up
+			{ x: center.x, y: center.y + offset }, // down
+			{ x: center.x - offset, y: center.y }, // left
+			{ x: center.x + offset, y: center.y }  // right
+		];
+
+		for (let i = 0; i < 4; i++) {
+			const entity = img[i];
+			if (!entity) continue;
+			entity.x = positions[i].x - entity.width / 2;
+			entity.y = positions[i].y - entity.height / 2;
+			entity.modified();
+			scene.append(entity);
+		}
+	}
+
+
+	private createButton(keyClick: string, imgPath: string, x: number, y: number) {
+		const img = this.scene.asset.getImage(imgPath);
+		let btnUp = new Button(this.scene, img, img.width, img.height, 2, false);
+		this.controllerLayer.append(btnUp)
+		btnUp.x = x;
+		btnUp.y = y;
+		btnUp.scale(2)
+		btnUp.modified();
+		btnUp.onClick.add(() => {
+			this.onControlClick.fire(keyClick);
+		});
+		return btnUp;
 	}
 
 	private createLobbyUI() {
@@ -63,7 +111,7 @@ export class UIManager {
 			font: globalThis.font,
 			text: Localization.getText("waiting_lbl"),
 			fontSize: 30,
-			textColor: "white",
+			textColor: "blue",
 			width: width,
 			textAlign: "center",
 			y: 10
@@ -126,9 +174,29 @@ export class UIManager {
 				y: 20,
 				width: boardWidth,
 				textAlign: "center",
-				hidden: true // Goal 1: Hide initially
+				hidden: true
 			});
 			this.scoreLabels[i] = label;
+		}
+	}
+
+	public refreshScoreLayout() {
+		let localPIndex = 0;
+		const myBoard = GameBoard.get(g.game.selfId);
+		if (myBoard) localPIndex = myBoard.playerIndex;
+
+		const boardWidth = GameBoard.COLS * GameBoard.puyoSize;
+		const gap = 50;
+		const totalWidth = 2 * boardWidth + gap;
+		const startX = (g.game.width - totalWidth) / 2;
+
+		for (let i = 0; i < 2; i++) {
+			const visualIndex = (i - localPIndex + 2) % 2;
+			const offsetX = startX + visualIndex * (boardWidth + gap);
+			if (this.scoreLabels[i]) {
+				this.scoreLabels[i].x = offsetX;
+				this.scoreLabels[i].modified();
+			}
 		}
 	}
 
@@ -195,14 +263,12 @@ export class UIManager {
 	}
 
 	public updateScore(playerIdx: number, score: number) {
-		// console.log('update score ', score);
 		if (this.scoreLabels[playerIdx]) {
 			this.scoreLabels[playerIdx].text = score.toString();
 			this.scoreLabels[playerIdx].invalidate();
 		}
 	}
 
-	// Goal 1: Methods to control visibility
 	public showScoreUI() {
 		for (let key in this.scoreLabels) {
 			this.scoreLabels[key].show();

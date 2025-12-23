@@ -58,6 +58,14 @@ export class GameBoard {
 		return null;
 	}
 
+	private getVisualIndex(): number {
+		let localPlayerIndex = 0;
+		if (GameBoard.instances[g.game.selfId]) {
+			localPlayerIndex = GameBoard.instances[g.game.selfId].playerIndex;
+		}
+		return (this.playerIndex - localPlayerIndex + 2) % 2;
+	}
+
 	public init(scene: g.Scene, parent: g.E) {
 		this.rootParent = parent;
 
@@ -65,7 +73,7 @@ export class GameBoard {
 		const gap = 50;
 		const totalWidth = 2 * boardWidth + gap;
 		const startX = (g.game.width - totalWidth) / 2;
-		const offsetX = startX + this.playerIndex * (boardWidth + gap);
+		const offsetX = startX + this.getVisualIndex() * (boardWidth + gap);
 
 		this.board = Array.from({ length: GameBoard.ROWS }, () => Array(GameBoard.COLS).fill(0));
 
@@ -96,7 +104,7 @@ export class GameBoard {
 		const gap = 50;
 		const totalWidth = 2 * boardWidth + gap;
 		const startX = (g.game.width - totalWidth) / 2;
-		const offsetX = startX + this.playerIndex * (boardWidth + gap);
+		const offsetX = startX + this.getVisualIndex() * (boardWidth + gap);
 
 		if (this.backgroundNode && !this.backgroundNode.destroyed()) return;
 
@@ -109,7 +117,7 @@ export class GameBoard {
 			width: GameBoard.puyoSize * GameBoard.COLS,
 			height: GameBoard.puyoSize * GameBoard.ROWS,
 			cssColor: GameBoard.colorBackground[this.playerIndex % GameBoard.colorBackground.length]
-		});		
+		});
 	}
 
 	public spawnPuyo() {
@@ -133,7 +141,7 @@ export class GameBoard {
 
 		this.currentPuyo = nextPuyo;
 		this.updatePuyoView();
-	}	
+	}
 	public getSubPos(x: number, y: number, rot: number) {
 		let sx = x; let sy = y;
 		if (rot === 0) sy -= 1;
@@ -267,7 +275,7 @@ export class GameBoard {
 		const gap = 50;
 		const totalWidth = 2 * boardWidth + gap;
 		const startX = (g.game.width - totalWidth) / 2;
-		const offsetX = startX + this.playerIndex * (boardWidth + gap);
+		const offsetX = startX + this.getVisualIndex() * (boardWidth + gap);
 
 		if (this.boardNode && !this.boardNode.destroyed()) this.boardNode.destroy();
 

@@ -1,5 +1,5 @@
 {
-	"width": 1280,
+	"width": 720,
 	"height": 720,
 	"fps": 30,
 	"main": "./script/bundle.js",
@@ -76,6 +76,30 @@
 			"path": "assets/bacsi.png",
 			"width": 96,
 			"height": 154
+		},
+		"assets/ui/arrow-down.png": {
+			"type": "image",
+			"path": "assets/ui/arrow-down.png",
+			"width": 45,
+			"height": 33
+		},
+		"assets/ui/arrow-left.png": {
+			"type": "image",
+			"path": "assets/ui/arrow-left.png",
+			"width": 73,
+			"height": 21
+		},
+		"assets/ui/arrow-right.png": {
+			"type": "image",
+			"path": "assets/ui/arrow-right.png",
+			"width": 74,
+			"height": 21
+		},
+		"assets/ui/arrow-up.png": {
+			"type": "image",
+			"path": "assets/ui/arrow-up.png",
+			"width": 45,
+			"height": 33
 		}
 	},
 	"moduleMainScripts": {},

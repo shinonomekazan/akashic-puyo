@@ -11,4 +11,9 @@ export const assetPaths = [
 	"/assets/project_layout.json",
 	"/assets/bacsi.png",
 	"/assets/test.json",
+	//button
+	"/assets/ui/arrow-down.png",
+	"/assets/ui/arrow-left.png",
+	"/assets/ui/arrow-right.png",
+	"/assets/ui/arrow-up.png",
 ]
