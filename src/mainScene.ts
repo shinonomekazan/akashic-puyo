@@ -6,11 +6,13 @@ import { GameBoard } from "./gameBoard";
 import { Player } from "./Player";
 import { UIManager } from "./uiManager";
 import { move_sender } from "./sender";
+import { SoundManager } from "./soundManager";
 
 export class MainScene extends g.Scene {
 	flowManager: FlowManager;
 	flowCreator: FlowCreator;
 	uiManager: UIManager;
+	soundManager: SoundManager;
 
 	private dropTimers: number[] = [0, 0];
 	private readonly DROP_INTERVAL = 1.0;
@@ -35,12 +37,13 @@ export class MainScene extends g.Scene {
 	};
 
 	private onGameLoad() {
-		this.uiManager = new UIManager(this);
+		this.soundManager = new SoundManager(this);
+		this.uiManager = new UIManager(this, this.soundManager);
 		this.uiManager.onControlClick.add(key => {
 			if (!this.isGameStarted) return;
 			this.game.raiseEvent(new g.MessageEvent({ type: "input", key: key }));
 		});
-		this.flowCreator = new FlowCreator(this.flowManager, this.uiManager, this);
+		this.flowCreator = new FlowCreator(this.flowManager, this.uiManager, this, this.soundManager);
 		this.uiManager.onLobbyClick.add(() => {
 			const myPlayer = this.players[g.game.selfId];
 			if (!myPlayer) {

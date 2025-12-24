@@ -1,6 +1,7 @@
 import { Button, ButtonMargin } from "./button";
 import { GameBoard } from "./gameBoard";
 import { Localization } from "./localization";
+import { SoundManager } from "./soundManager";
 
 export class UIManager {
 	public layoutRoot: g.E;
@@ -25,8 +26,13 @@ export class UIManager {
 	private restartButton: g.FilledRect;
 	private restartLabel: g.Label;
 
-	constructor(scene: g.Scene) {
+	private soundButton: g.FilledRect;
+	private soundLabel: g.Label;
+	private soundManager: SoundManager;
+
+	constructor(scene: g.Scene, soundManager?: SoundManager) {
 		this.scene = scene;
+		this.soundManager = soundManager;
 		this.layoutRoot = new g.E({ scene: scene, parent: scene });
 
 		this.gameLayer = new g.E({ scene: scene, parent: this.layoutRoot });
@@ -36,6 +42,10 @@ export class UIManager {
 		this.createScoreUI();
 		this.createGameOverUI();
 		this.createUIController();
+
+		if (this.soundManager) {
+			//this.createSoundButton();
+		}
 	}
 	private createUIController() {
 		const scene = this.scene;
@@ -86,6 +96,54 @@ export class UIManager {
 			this.onControlClick.fire(keyClick);
 		});
 		return btnUp;
+	}
+
+	private createSoundButton() {
+		const width = 120;
+		const height = 40;
+
+		this.soundButton = new g.FilledRect({
+			scene: this.scene,
+			parent: this.uiLayer,
+			x: g.game.width - width - 10,
+			y: 10,
+			width: width,
+			height: height,
+			cssColor: "gray",
+			opacity: 0.8,
+			touchable: true
+		});
+
+		this.soundLabel = new g.Label({
+			scene: this.scene,
+			parent: this.soundButton,
+			font: globalThis.font,
+			text: "Sound: ON",
+			fontSize: 20,
+			textColor: "white",
+			width: width,
+			textAlign: "center",
+			y: 8
+		});
+
+		this.soundButton.onPointDown.add((ev) => {
+			if (ev.player && ev.player.id === g.game.selfId) {
+				this.soundManager.toggleMute();
+				this.updateSoundButtonState();
+			}
+		});
+	}
+
+	private updateSoundButtonState() {
+		if (this.soundManager.isMuted) {
+			this.soundLabel.text = "Sound: OFF";
+			this.soundButton.cssColor = "#444444";
+		} else {
+			this.soundLabel.text = "Sound: ON";
+			this.soundButton.cssColor = "gray";
+		}
+		this.soundLabel.invalidate();
+		this.soundButton.modified();
 	}
 
 	private createLobbyUI() {
