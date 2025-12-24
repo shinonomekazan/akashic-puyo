@@ -1,3 +1,10 @@
+export interface ButtonMargin {
+	top: number;
+	right: number;
+	bottom: number;
+	left: number;
+}
+
 export class Button extends g.E {
 	readonly onClick: g.Trigger = new g.Trigger();
 	private actived = true;
@@ -8,12 +15,15 @@ export class Button extends g.E {
 		src: g.ImageAsset | g.Surface,
 		width: number,
 		height: number,
-		hitScale: number,
+		margin: ButtonMargin,
 		hitDebug?: boolean
 	) {
+		if (margin == undefined) {
+			margin = { bottom: 0, left: 0, right: 0, top: 0 };
+		}
 		const visualWidth = width / 2;
-		const areaWidth = visualWidth * hitScale;
-		const areaHeight = height * hitScale;
+		const areaWidth = visualWidth + margin.left + margin.right;
+		const areaHeight = height + margin.top + margin.bottom;
 
 		super({
 			scene: scene,
@@ -43,23 +53,27 @@ export class Button extends g.E {
 			parent: this
 		});
 
-		this.body.x = (this.width - this.body.width) / 2;
-		this.body.y = (this.height - this.body.height) / 2;
+		this.body.x = margin.left;
+		this.body.y = margin.top;
 
 		this.onPointUp.add((ev) => {
 			if (this.actived == false) {
 				return;
 			}
-			this.body.frameNumber = 0;
-			this.body.modified();
-			if (ev.player && ev.player.id === g.game.selfId) this.onClick.fire();
+			if (ev.player && ev.player.id === g.game.selfId) {
+				this.body.frameNumber = 0;
+				this.body.modified();
+				this.onClick.fire();
+			}
 		});
-		this.onPointDown.add(() => {
+		this.onPointDown.add((ev) => {
 			if (this.actived == false) {
 				return;
 			}
-			this.body.frameNumber = 1;
-			this.body.modified();
+			if (ev.player && ev.player.id === g.game.selfId) {
+				this.body.frameNumber = 1;
+				this.body.modified();
+			}
 		});
 	}
 	setActive(active: boolean) {

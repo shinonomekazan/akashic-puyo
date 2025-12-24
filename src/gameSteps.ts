@@ -63,14 +63,8 @@ export class TransStep extends BaseStep {
 		} else if (eventName === FlowEventName.Rotate) {
 			const sender = getSender() as rotate_sender;
 			const board = GameBoard.getByIndex(sender.playerIdx);
-
 			if (!board || !board.currentPuyo) return;
-
-			const nextRot = (board.currentPuyo.rot + 1) % 4;
-			if (board.isValid(board.currentPuyo.x, board.currentPuyo.y, nextRot)) {
-				board.currentPuyo.rot = nextRot;
-				board.updatePuyoView();
-			}
+			board.tryRotate(sender.clockwise);
 		}
 	}
 }

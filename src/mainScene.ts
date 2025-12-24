@@ -27,8 +27,7 @@ export class MainScene extends g.Scene {
 
 		this.onKeyDownHandler = (ev: any) => {
 			if (!this.isGameStarted) return;
-			console.log('1--> ', this.game.selfId);
-			this.game.raiseEvent(new g.MessageEvent({ type: "input", key: ev.key, id: this.game.selfId }));
+			this.game.raiseEvent(new g.MessageEvent({ type: "input", key: ev.key }));
 		};
 
 		this.onLoad.add(this.onGameLoad, this);
@@ -36,12 +35,10 @@ export class MainScene extends g.Scene {
 	};
 
 	private onGameLoad() {
-		console.log('gameloaded');
 		this.uiManager = new UIManager(this);
 		this.uiManager.onControlClick.add(key => {
 			if (!this.isGameStarted) return;
-			console.log('2--> ', this.game.selfId);
-			this.game.raiseEvent(new g.MessageEvent({ type: "input", key: key, id: this.game.selfId }));
+			this.game.raiseEvent(new g.MessageEvent({ type: "input", key: key }));
 		});
 		this.flowCreator = new FlowCreator(this.flowManager, this.uiManager, this);
 		this.uiManager.onLobbyClick.add(() => {
@@ -58,10 +55,7 @@ export class MainScene extends g.Scene {
 		});
 
 		this.refreshLobbyState();
-
-		console.log('reg widdown ', typeof window !== "undefined");
 		if (typeof window !== "undefined") {
-
 			window.addEventListener('keydown', this.onKeyDownHandler);
 		}
 
@@ -155,9 +149,7 @@ export class MainScene extends g.Scene {
 	}
 
 	private handleMessage(ev: g.MessageEvent) {
-		console.log('onmessage');
 		if (!ev.data) return;
-
 		if (ev.data.type === "restart") {
 			Object.values(this.players).forEach(p => p.ready = false);
 			this.flowManager.fireAsync(FlowEventName.ResetGame);
@@ -166,7 +158,6 @@ export class MainScene extends g.Scene {
 		}
 
 		if (!ev.player || !ev.player.id) return;
-		console.log('move ', ev.player.id);
 		const idOfPlayerSend = ev.player.id;
 		const player = this.players[idOfPlayerSend];
 

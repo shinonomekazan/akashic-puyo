@@ -19,8 +19,9 @@ export class Player {
 	public handleInput(key: string, dropTimerReset: () => void) {
 		const board = GameBoard.get(this.id);
 		if (!board || board.isPaused || board.isAnimating) return;
-		if (key === "ArrowUp") {
+		if (key === "ArrowUp" || key === "ArrowUpCCW") {
 			let rotateSender = new rotate_sender(this.pIdx);
+			rotateSender.clockwise = (key === "ArrowUp");
 			this.flowManager.fireAsync(FlowEventName.Rotate, rotateSender);
 		} else {
 			const moveSender = new move_sender(this.pIdx);

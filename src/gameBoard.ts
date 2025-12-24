@@ -98,6 +98,30 @@ export class GameBoard {
 		}
 	}
 
+	public tryRotate(clockwise: boolean) {
+		if (!this.currentPuyo) return;
+
+		const currentRot = this.currentPuyo.rot;
+		const delta = clockwise ? 1 : 3;
+		const nextRot = (currentRot + delta) % 4;
+		if (this.isValid(this.currentPuyo.x, this.currentPuyo.y, nextRot)) {
+			this.currentPuyo.rot = nextRot;
+			this.updatePuyoView();
+			return;
+		}
+		if (this.isValid(this.currentPuyo.x - 1, this.currentPuyo.y, nextRot)) {
+			this.currentPuyo.x -= 1;
+			this.currentPuyo.rot = nextRot;
+			this.updatePuyoView();
+			return;
+		}
+		if (this.isValid(this.currentPuyo.x + 1, this.currentPuyo.y, nextRot)) {
+			this.currentPuyo.x += 1;
+			this.currentPuyo.rot = nextRot;
+			this.updatePuyoView();
+			return;
+		}
+	}
 	public fillBackground() {
 		const scene = g.game.scene();
 		const boardWidth = GameBoard.COLS * GameBoard.puyoSize;

@@ -16,4 +16,6 @@ export const assetPaths = [
 	"/assets/ui/arrow-left.png",
 	"/assets/ui/arrow-right.png",
 	"/assets/ui/arrow-up.png",
+	"/assets/ui/rotate-cw.png",
+	"/assets/ui/rotate-ccw.png",
 ]

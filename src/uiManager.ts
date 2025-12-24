@@ -1,4 +1,4 @@
-import { Button } from "./button";
+import { Button, ButtonMargin } from "./button";
 import { GameBoard } from "./gameBoard";
 import { Localization } from "./localization";
 
@@ -40,16 +40,23 @@ export class UIManager {
 	private createUIController() {
 		const scene = this.scene;
 		this.controllerLayer = new g.E({ scene: scene, parent: this.layoutRoot });
-		let left = this.createButton("ArrowLeft", "/assets/ui/arrow-left.png", 100, 100);
-		let right = this.createButton("ArrowRight", "/assets/ui/arrow-right.png", 100, 150);
-		let up = this.createButton("ArrowUp", "/assets/ui/arrow-up.png", 100, 155);
-		let down = this.createButton("ArrowDown", "/assets/ui/arrow-down.png", 100, 160);
-		this.placeEntitiesAroundCenter(scene, { x: 100, y: g.game.height - 150 }, [
-			up, down, left, right
-		])
+		let left = this.createButton("ArrowLeft", "/assets/ui/arrow-left.png", 100, 100, { left: 7, right: 0, top: 7, bottom: 7 }, 2);
+		let right = this.createButton("ArrowRight", "/assets/ui/arrow-right.png", 100, 150, { left: 0, right: 7, top: 7, bottom: 7 }, 2);
+		let up = this.createButton("ArrowUp", "/assets/ui/arrow-up.png", 100, 155, { left: 7, right: 7, top: 7, bottom: 1 }, 2);
+		let down = this.createButton("ArrowDown", "/assets/ui/arrow-down.png", 100, 160, { left: 7, right: 7, top: 0, bottom: 7 }, 2);
+		this.placeEntitiesAroundCenter(
+			scene,
+			{ x: 130, y: g.game.height - 150 },
+			[up, down, left, right]
+		)
+		let rotateCw = this.createButton("ArrowUp", "/assets/ui/rotate-cw.png", g.game.width - 200, right.y - right.height / 2, undefined, 1);
+		this.controllerLayer.append(rotateCw);
+		let rotateCCw = this.createButton("ArrowUpCCW", "/assets/ui/rotate-ccw.png", g.game.width - 200 - 150, right.y - right.height / 2, undefined, 1);
+		this.controllerLayer.append(rotateCCw);
+		this.controllerLayer.hide();
 	}
 	private placeEntitiesAroundCenter(scene: g.Scene, center: g.CommonOffset, img: g.E[]) {
-		const offset = 70;
+		const offset = 80;
 		const positions: g.CommonOffset[] = [
 			{ x: center.x, y: center.y - offset }, // up
 			{ x: center.x, y: center.y + offset }, // down
@@ -60,21 +67,20 @@ export class UIManager {
 		for (let i = 0; i < 4; i++) {
 			const entity = img[i];
 			if (!entity) continue;
-			entity.x = positions[i].x - entity.width / 2;
-			entity.y = positions[i].y - entity.height / 2;
+			entity.x = positions[i].x - entity.width;
+			entity.y = positions[i].y - entity.height;
 			entity.modified();
-			scene.append(entity);
 		}
 	}
 
 
-	private createButton(keyClick: string, imgPath: string, x: number, y: number) {
+	private createButton(keyClick: string, imgPath: string, x: number, y: number, margin: ButtonMargin, scale: number = 1) {
 		const img = this.scene.asset.getImage(imgPath);
-		let btnUp = new Button(this.scene, img, img.width, img.height, 2, false);
+		let btnUp = new Button(this.scene, img, img.width, img.height, margin, false);
 		this.controllerLayer.append(btnUp)
 		btnUp.x = x;
 		btnUp.y = y;
-		btnUp.scale(2)
+		btnUp.scale(scale)
 		btnUp.modified();
 		btnUp.onClick.add(() => {
 			this.onControlClick.fire(keyClick);
@@ -270,6 +276,7 @@ export class UIManager {
 	}
 
 	public showScoreUI() {
+		this.controllerLayer.show();
 		for (let key in this.scoreLabels) {
 			this.scoreLabels[key].show();
 		}
@@ -310,6 +317,7 @@ export class UIManager {
 	}
 
 	public hideLobbyUI() {
+
 		this.lobbyContainer.hide();
 		this.lobbyReadySprite.hide();
 	}
@@ -325,6 +333,7 @@ export class UIManager {
 		this.restartLabel.modified();
 
 		this.gameOverContainer.show();
+		this.controllerLayer.hide();
 	}
 
 	public hideGameOverUI() {

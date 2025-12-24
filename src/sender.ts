@@ -22,6 +22,7 @@ export class rotate_sender extends client_sender {
 	constructor(playerIdx: number) {
 		super(playerIdx);
 	}
+	clockwise?: boolean;
 }
 export class move_sender extends client_sender {
 	constructor(playerIdx: number) {
