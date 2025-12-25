@@ -44,7 +44,7 @@ export class UIManager {
 		this.createUIController();
 
 		if (this.soundManager) {
-			//this.createSoundButton();
+			this.createSoundButton();
 		}
 	}
 	private createUIController() {
@@ -104,7 +104,7 @@ export class UIManager {
 
 		this.soundButton = new g.FilledRect({
 			scene: this.scene,
-			parent: this.uiLayer,
+			parent: this.controllerLayer,
 			x: g.game.width - width - 10,
 			y: 10,
 			width: width,

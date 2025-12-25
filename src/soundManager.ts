@@ -7,11 +7,9 @@ export class SoundManager {
 	}
 
 	public play(assetId: string) {
-		return
 		if (this.isMuted) return;
 		try {
 			this.scene.asset.getAudioById(assetId).play();
-			console.log('play ', assetId);
 		} catch (e) {
 			console.error("Audio asset not found or play failed: " + assetId);
 		}
