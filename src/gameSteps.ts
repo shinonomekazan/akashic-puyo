@@ -38,7 +38,13 @@ export class TransStep extends BaseStep {
 			if (!board || !board.currentPuyo) return;
 
 			if (sender.isHardDrop) {
-				while (board.isValid(board.currentPuyo.x, board.currentPuyo.y + 1, board.currentPuyo.rot)) {
+				while (
+					board.isValid(
+						board.currentPuyo.x,
+						board.currentPuyo.y + 1,
+						board.currentPuyo.rot
+					)
+				) {
 					board.currentPuyo.y += 1;
 				}
 				board.updatePuyoView();

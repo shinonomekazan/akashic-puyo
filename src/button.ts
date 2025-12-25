@@ -37,7 +37,7 @@ export class Button extends g.E {
 				width: areaWidth,
 				height: areaHeight,
 				cssColor: "rgba(255,0,0,0.5)",
-				parent: this
+				parent: this,
 			});
 			tmp.x = (this.width - tmp.width) / 2;
 			tmp.y = (this.height - tmp.height) / 2;
@@ -50,7 +50,7 @@ export class Button extends g.E {
 			frameNumber: 0,
 			frames: [0, 1, 2],
 			touchable: false,
-			parent: this
+			parent: this,
 		});
 
 		this.body.x = margin.left;

@@ -80,26 +80,144 @@
 		"assets/ui/arrow-down.png": {
 			"type": "image",
 			"path": "assets/ui/arrow-down.png",
-			"width": 45,
-			"height": 33
+			"width": 55,
+			"height": 41
 		},
 		"assets/ui/arrow-left.png": {
 			"type": "image",
 			"path": "assets/ui/arrow-left.png",
-			"width": 73,
-			"height": 21
+			"width": 89,
+			"height": 26
 		},
 		"assets/ui/arrow-right.png": {
 			"type": "image",
 			"path": "assets/ui/arrow-right.png",
-			"width": 74,
-			"height": 21
+			"width": 90,
+			"height": 26
 		},
 		"assets/ui/arrow-up.png": {
 			"type": "image",
 			"path": "assets/ui/arrow-up.png",
-			"width": 45,
-			"height": 33
+			"width": 55,
+			"height": 41
+		},
+		"assets/ui/rotate-ccw.png": {
+			"type": "image",
+			"path": "assets/ui/rotate-ccw.png",
+			"width": 144,
+			"height": 72
+		},
+		"assets/ui/rotate-cw.png": {
+			"type": "image",
+			"path": "assets/ui/rotate-cw.png",
+			"width": 144,
+			"height": 72
+		},
+		"assets/sound/se_gameover": {
+			"type": "audio",
+			"path": "assets/sound/se_gameover",
+			"systemId": "sound",
+			"duration": 1986,
+			"hint": {
+				"extensions": [".m4a", ".ogg"]
+			}
+		},
+		"assets/sound/se_harddrop": {
+			"type": "audio",
+			"path": "assets/sound/se_harddrop",
+			"systemId": "sound",
+			"duration": 262,
+			"hint": {
+				"extensions": [".m4a", ".ogg"]
+			}
+		},
+		"assets/sound/se_rotate": {
+			"type": "audio",
+			"path": "assets/sound/se_rotate",
+			"systemId": "sound",
+			"duration": 497,
+			"hint": {
+				"extensions": [".m4a", ".ogg"]
+			}
+		},
+		"assets/sound/se_score": {
+			"type": "audio",
+			"path": "assets/sound/se_score",
+			"systemId": "sound",
+			"duration": 360,
+			"hint": {
+				"extensions": [".m4a", ".ogg"]
+			}
+		},
+		"assets/sound/se_win": {
+			"type": "audio",
+			"path": "assets/sound/se_win",
+			"systemId": "sound",
+			"duration": 3475,
+			"hint": {
+				"extensions": [".m4a", ".ogg"]
+			}
+		},
+		"assets/sound/se_gameover.mp3": {
+			"type": "binary",
+			"path": "assets/sound/se_gameover.mp3"
+		},
+		"assets/sound/se_harddrop.mp3": {
+			"type": "binary",
+			"path": "assets/sound/se_harddrop.mp3"
+		},
+		"assets/sound/se_rotate.mp3": {
+			"type": "binary",
+			"path": "assets/sound/se_rotate.mp3"
+		},
+		"assets/sound/se_score.mp3": {
+			"type": "binary",
+			"path": "assets/sound/se_score.mp3"
+		},
+		"assets/sound/se_win.mp3": {
+			"type": "binary",
+			"path": "assets/sound/se_win.mp3"
+		},
+		"assets/sound/convert.bat": {
+			"type": "text",
+			"path": "assets/sound/convert.bat"
+		},
+		"assets/sound/Download Free Game Sound Effects - Royalty-Free Video Game Sounds - Sound Library - Pixabay.url": {
+			"type": "text",
+			"path": "assets/sound/Download Free Game Sound Effects - Royalty-Free Video Game Sounds - Sound Library - Pixabay.url"
+		},
+		"assets/sound/New folder/se_gameover.mp3": {
+			"type": "binary",
+			"path": "assets/sound/New folder/se_gameover.mp3"
+		},
+		"assets/sound/New folder/se_harddrop.mp3": {
+			"type": "binary",
+			"path": "assets/sound/New folder/se_harddrop.mp3"
+		},
+		"assets/sound/New folder/se_rotate.mp3": {
+			"type": "binary",
+			"path": "assets/sound/New folder/se_rotate.mp3"
+		},
+		"assets/sound/New folder/se_score.mp3": {
+			"type": "binary",
+			"path": "assets/sound/New folder/se_score.mp3"
+		},
+		"assets/sound/New folder/se_win.mp3": {
+			"type": "binary",
+			"path": "assets/sound/New folder/se_win.mp3"
+		},
+		"assets/sound/se_click": {
+			"type": "audio",
+			"path": "assets/sound/se_click",
+			"systemId": "sound",
+			"duration": 157,
+			"hint": {
+				"extensions": [".m4a", ".ogg"]
+			}
+		},
+		"assets/sound/se_click.mp3": {
+			"type": "binary",
+			"path": "assets/sound/se_click.mp3"
 		}
 	},
 	"moduleMainScripts": {},
@@ -110,10 +228,7 @@
 			"flavor": "-canvas"
 		},
 		"nicolive": {
-			"supportedModes": [
-				"single",
-				"multi"
-			]
+			"supportedModes": ["single", "multi"]
 		}
 	},
 	"globalScripts": [],

@@ -61,13 +61,13 @@ export class Helper {
 	static crossSprite(newSprite: g.E, current: g.E, time = 1000) {
 		let tl = new Timeline(g.game.scene());
 		let tw = tl.create(newSprite);
-		newSprite.show()
+		newSprite.show();
 		tw.every((e, p) => {
 			newSprite.opacity = p;
 			current.opacity = 1 - p;
-			current.modified()
-			newSprite.modified()
-		}, time)
+			current.modified();
+			newSprite.modified();
+		}, time);
 		return new Promise((resolve) => {
 			setTimeout(() => {
 				resolve(undefined);
@@ -146,7 +146,7 @@ export class Helper {
 		});
 		return spr;
 	}
-	
+
 	static newLable(text: string) {
 		let scene = g.game.scene();
 		let lab = new g.Label({

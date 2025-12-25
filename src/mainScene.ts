@@ -29,21 +29,30 @@ export class MainScene extends g.Scene {
 
 		this.onKeyDownHandler = (ev: any) => {
 			if (!this.isGameStarted) return;
-			this.game.raiseEvent(new g.MessageEvent({ type: "input", key: ev.key }));
+			this.game.raiseEvent(
+				new g.MessageEvent({ type: "input", key: ev.key })
+			);
 		};
 
 		this.onLoad.add(this.onGameLoad, this);
 		this.onMessage.add(this.handleMessage, this);
-	};
+	}
 
 	private onGameLoad() {
 		this.soundManager = new SoundManager(this);
 		this.uiManager = new UIManager(this, this.soundManager);
-		this.uiManager.onControlClick.add(key => {
+		this.uiManager.onControlClick.add((key) => {
 			if (!this.isGameStarted) return;
-			this.game.raiseEvent(new g.MessageEvent({ type: "input", key: key }));
+			this.game.raiseEvent(
+				new g.MessageEvent({ type: "input", key: key })
+			);
 		});
-		this.flowCreator = new FlowCreator(this.flowManager, this.uiManager, this, this.soundManager);
+		this.flowCreator = new FlowCreator(
+			this.flowManager,
+			this.uiManager,
+			this,
+			this.soundManager
+		);
 		this.uiManager.onLobbyClick.add(() => {
 			const myPlayer = this.players[g.game.selfId];
 			if (!myPlayer) {
@@ -59,12 +68,12 @@ export class MainScene extends g.Scene {
 
 		this.refreshLobbyState();
 		if (typeof window !== "undefined") {
-			window.addEventListener('keydown', this.onKeyDownHandler);
+			window.addEventListener("keydown", this.onKeyDownHandler);
 		}
 
 		this.onUpdate.add(() => {
 			if (!this.isGameStarted) return;
-			Object.keys(this.players).forEach(id => {
+			Object.keys(this.players).forEach((id) => {
 				const player = this.players[id];
 				const board = GameBoard.get(id);
 				if (!board || board.isPaused || board.isAnimating) return;
@@ -73,7 +82,7 @@ export class MainScene extends g.Scene {
 				if (this.dropTimers[player.pIdx] >= this.DROP_INTERVAL) {
 					this.dropTimers[player.pIdx] = 0;
 					let sen = new move_sender(player.pIdx);
-					sen.xy = { x: 0, y: 1 }
+					sen.xy = { x: 0, y: 1 };
 					sen.isHardDrop = false;
 					this.flowManager.fireAsync(FlowEventName.Move, sen);
 				}
@@ -84,7 +93,7 @@ export class MainScene extends g.Scene {
 	//override
 	destroy(): void {
 		if (typeof window !== "undefined") {
-			window.removeEventListener('keydown', this.onKeyDownHandler);
+			window.removeEventListener("keydown", this.onKeyDownHandler);
 		}
 		super.destroy();
 	}
@@ -99,7 +108,7 @@ export class MainScene extends g.Scene {
 		const playerCount = Object.keys(this.players).length;
 		const myId = g.game.selfId;
 		const myPlayer = this.players[myId];
-		const amIPlayer = (myPlayer !== undefined);
+		const amIPlayer = myPlayer !== undefined;
 
 		let textKey = "";
 		let enableButton = false;
@@ -128,7 +137,11 @@ export class MainScene extends g.Scene {
 			}
 		}
 
-		this.flowManager.fireAsync(FlowEventName.UpdateLobbyUI, { textKey: textKey, enableButton: enableButton, showWaitSprite: showWaitSprite });
+		this.flowManager.fireAsync(FlowEventName.UpdateLobbyUI, {
+			textKey: textKey,
+			enableButton: enableButton,
+			showWaitSprite: showWaitSprite,
+		});
 	}
 
 	private createPlayer(id: string) {
@@ -137,7 +150,13 @@ export class MainScene extends g.Scene {
 		const currentCount = Object.keys(this.players).length;
 		if (currentCount >= 2) return null;
 
-		GameBoard.createPlayerBoard(id, currentCount, this, this.uiManager.gameLayer, this.flowManager);
+		GameBoard.createPlayerBoard(
+			id,
+			currentCount,
+			this,
+			this.uiManager.gameLayer,
+			this.flowManager
+		);
 		const player = new Player(id, currentCount, this.flowManager);
 		this.players[id] = player;
 
@@ -154,7 +173,7 @@ export class MainScene extends g.Scene {
 	private handleMessage(ev: g.MessageEvent) {
 		if (!ev.data) return;
 		if (ev.data.type === "restart") {
-			Object.values(this.players).forEach(p => p.ready = false);
+			Object.values(this.players).forEach((p) => (p.ready = false));
 			this.flowManager.fireAsync(FlowEventName.ResetGame);
 			this.refreshLobbyState();
 			return;
@@ -209,7 +228,7 @@ export class MainScene extends g.Scene {
 	private checkAndStartGame() {
 		const allPlayers = Object.values(this.players);
 		const isEnoughPlayers = allPlayers.length === 2;
-		const allReady = allPlayers.every(p => p.ready);
+		const allReady = allPlayers.every((p) => p.ready);
 
 		if (isEnoughPlayers && allReady) {
 			if (!this.isGameStarted) {

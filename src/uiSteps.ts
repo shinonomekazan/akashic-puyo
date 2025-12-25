@@ -12,9 +12,17 @@ export class UIStep extends BaseStep {
 	public async onStep(eventName: FlowEventName): Promise<void> {
 		switch (eventName) {
 			case FlowEventName.UpdateLobbyUI:
-				const sender = getSender() as { textKey: string, enableButton: boolean, showWaitSprite: boolean };
+				const sender = getSender() as {
+					textKey: string;
+					enableButton: boolean;
+					showWaitSprite: boolean;
+				};
 				if (sender) {
-					this.uiManager.updateLobbyUI(sender.textKey, sender.enableButton, sender.showWaitSprite);
+					this.uiManager.updateLobbyUI(
+						sender.textKey,
+						sender.enableButton,
+						sender.showWaitSprite
+					);
 				} else {
 					this.uiManager.updateLobbyUI("wait_p2", false, false);
 				}
@@ -31,7 +39,10 @@ export class UIStep extends BaseStep {
 				const board = GameBoard.getByIndex(scoreSender.playerIdx);
 				if (board) {
 					board.score += scoreSender.score;
-					this.uiManager.updateScore(scoreSender.playerIdx, board.score);
+					this.uiManager.updateScore(
+						scoreSender.playerIdx,
+						board.score
+					);
 				}
 				break;
 
@@ -72,7 +83,10 @@ export class UIStep extends BaseStep {
 				this.uiManager.hideGameOverUI();
 				this.uiManager.hideScoreUI();
 				for (let id in GameBoard.instances) {
-					this.uiManager.updateScore(GameBoard.get(id).playerIndex, 0);
+					this.uiManager.updateScore(
+						GameBoard.get(id).playerIndex,
+						0
+					);
 				}
 				break;
 		}

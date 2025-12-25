@@ -82,7 +82,10 @@ export class FlowManager {
 		});
 	}
 
-	public async fireAsync(eventName: FlowEventName, sender: object = undefined) {
+	public async fireAsync(
+		eventName: FlowEventName,
+		sender: object = undefined
+	) {
 		let targetFlow: Flow = null;
 		for (let i = 0; i < this.flows.length; i++) {
 			if (this.flows[i].eventName == eventName) {

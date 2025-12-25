@@ -25,5 +25,4 @@ export const assetPaths = [
 	"/assets/sound/se_win",
 	"/assets/sound/se_score",
 	"/assets/sound/se_click",
-
-]
+];

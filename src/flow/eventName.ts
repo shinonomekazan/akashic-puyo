@@ -8,5 +8,5 @@ export enum FlowEventName {
 	HideLobbyUI,
 	AddScore,
 	GameOver,
-	ResetGame
+	ResetGame,
 }

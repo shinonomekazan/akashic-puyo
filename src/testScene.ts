@@ -15,11 +15,11 @@ export class TestScene extends g.Scene {
 		this.flowManager = new FlowManager();
 		this.onLoad.add(this.onGameLoad, this);
 		//new FlowCreator(this.flowManager);
-	};
+	}
 	private onGameLoad() {
-		console.log('test loaded');
+		console.log("test loaded");
 		const json = this.asset.getText("/assets/test.json").data;
-		console.log('2');
+		console.log("2");
 		//let spr = Helper.newSprite("/assets/fire.png")
 		//spr.x = 100;
 		//spr.y = 100;
@@ -40,7 +40,7 @@ export class TestScene extends g.Scene {
 		const mamcay = loader.getEntity("dotnet_bot.scale-400");
 		mamcay.touchable = true;
 		mamcay.onPointDown.add(() => {
-			console.log('CLICKKK');
+			console.log("CLICKKK");
 			this.flowManager.fireAsync(FlowEventName.Test);
 		});
 

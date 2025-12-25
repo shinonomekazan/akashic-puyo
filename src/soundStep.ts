@@ -1,7 +1,13 @@
 import { BaseStep } from "./flow/step";
 import { FlowEventName } from "./flow/eventName";
 import { SoundManager } from "./soundManager";
-import { addScore_sender, gameOver_sender, getSender, move_sender, rotate_sender } from "./sender";
+import {
+	addScore_sender,
+	gameOver_sender,
+	getSender,
+	move_sender,
+	rotate_sender,
+} from "./sender";
 import { GameBoard } from "./gameBoard";
 
 export class SoundStep extends BaseStep {
@@ -18,7 +24,11 @@ export class SoundStep extends BaseStep {
 
 		switch (eventName) {
 			case FlowEventName.Rotate:
-				if (myBoard && sender instanceof rotate_sender && sender.playerIdx === myBoard.playerIndex) {
+				if (
+					myBoard &&
+					sender instanceof rotate_sender &&
+					sender.playerIdx === myBoard.playerIndex
+				) {
 					this.soundManager.play("assets/sound/se_click");
 				}
 				break;
@@ -38,7 +48,11 @@ export class SoundStep extends BaseStep {
 				break;
 
 			case FlowEventName.AddScore:
-				if (myBoard && sender instanceof addScore_sender && sender.playerIdx === myBoard.playerIndex) {
+				if (
+					myBoard &&
+					sender instanceof addScore_sender &&
+					sender.playerIdx === myBoard.playerIndex
+				) {
 					this.soundManager.play("assets/sound/se_score");
 				}
 				break;

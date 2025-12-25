@@ -27,8 +27,7 @@ async function main(param: g.GameParameterObject): Promise<void> {
 		game: g.game,
 		name: "testscene",
 	});
-	let mainScene = new MainScene(
-	{
+	let mainScene = new MainScene({
 		game: g.game,
 		name: "main scene",
 	});
