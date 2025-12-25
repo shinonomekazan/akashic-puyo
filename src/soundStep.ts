@@ -19,7 +19,7 @@ export class SoundStep extends BaseStep {
 	}
 
 	public async onStep(eventName: FlowEventName): Promise<void> {
-		const sender = getSender();
+		const sender = getSender(eventName);
 		const myBoard = GameBoard.get(g.game.selfId);
 
 		switch (eventName) {

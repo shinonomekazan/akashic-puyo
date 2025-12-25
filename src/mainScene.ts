@@ -76,7 +76,13 @@ export class MainScene extends g.Scene {
 			Object.keys(this.players).forEach((id) => {
 				const player = this.players[id];
 				const board = GameBoard.get(id);
-				if (!board || board.isPaused || board.isAnimating) return;
+				if (
+					!board ||
+					board.isPaused ||
+					board.isAnimating ||
+					!board.currentPuyo
+				)
+					return;
 
 				this.dropTimers[player.pIdx] += 1 / g.game.fps;
 				if (this.dropTimers[player.pIdx] >= this.DROP_INTERVAL) {

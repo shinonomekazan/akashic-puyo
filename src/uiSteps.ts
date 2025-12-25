@@ -17,7 +17,7 @@ export class UIStep extends BaseStep {
 	public async onStep(eventName: FlowEventName): Promise<void> {
 		switch (eventName) {
 			case FlowEventName.UpdateLobbyUI:
-				const sender = getSender() as {
+				const sender = getSender(eventName) as {
 					textKey: string;
 					enableButton: boolean;
 					showWaitSprite: boolean;
@@ -40,7 +40,7 @@ export class UIStep extends BaseStep {
 				break;
 
 			case FlowEventName.UpdateNextPuyo:
-				const nextSender = getSender() as nextPuyo_sender;
+				const nextSender = getSender(eventName) as nextPuyo_sender;
 				if (nextSender) {
 					this.uiManager.updateNextPuyo(
 						nextSender.playerIdx,
@@ -51,7 +51,7 @@ export class UIStep extends BaseStep {
 				break;
 
 			case FlowEventName.AddScore:
-				const scoreSender = getSender() as addScore_sender;
+				const scoreSender = getSender(eventName) as addScore_sender;
 				const board = GameBoard.getByIndex(scoreSender.playerIdx);
 				if (board) {
 					board.score += scoreSender.score;
@@ -64,7 +64,7 @@ export class UIStep extends BaseStep {
 
 			case FlowEventName.GameOver:
 				console.log("game over");
-				const goSender = getSender() as gameOver_sender;
+				const goSender = getSender(eventName) as gameOver_sender;
 				let myIdx = -1;
 				const myBoard = GameBoard.get(g.game.selfId);
 				if (myBoard) {

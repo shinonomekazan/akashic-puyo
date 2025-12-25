@@ -8,7 +8,10 @@ export function initialSender() {
 export function setSender(value: any) {
 	senders.set(FlowManager.eventName, value);
 }
-export function getSender(): any {
+export function getSender(eventName?: FlowEventName): any {
+	if (eventName !== undefined) {
+		return senders.get(eventName);
+	}
 	return senders.get(FlowManager.eventName);
 }
 //sender:

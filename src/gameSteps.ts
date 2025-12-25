@@ -38,7 +38,8 @@ export class GameStateStep extends BaseStep {
 export class TransStep extends BaseStep {
 	public async onStep(eventName: FlowEventName): Promise<void> {
 		if (eventName === FlowEventName.Move) {
-			const sender = getSender() as move_sender;
+			const sender = getSender(eventName) as move_sender;
+			if (!sender) return;
 			const board = GameBoard.getByIndex(sender.playerIdx);
 
 			if (!board || !board.currentPuyo) return;
@@ -58,7 +59,6 @@ export class TransStep extends BaseStep {
 				board.spawnPuyo();
 				return;
 			}
-
 			const nextX = board.currentPuyo.x + sender.xy.x;
 			const nextY = board.currentPuyo.y + sender.xy.y;
 
@@ -73,7 +73,8 @@ export class TransStep extends BaseStep {
 				}
 			}
 		} else if (eventName === FlowEventName.Rotate) {
-			const sender = getSender() as rotate_sender;
+			const sender = getSender(eventName) as rotate_sender;
+			if (!sender) return;
 			const board = GameBoard.getByIndex(sender.playerIdx);
 			if (!board || !board.currentPuyo) return;
 			board.tryRotate(sender.clockwise);
