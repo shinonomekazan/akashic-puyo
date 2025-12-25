@@ -8,7 +8,7 @@ export interface ButtonMargin {
 export class Button extends g.E {
 	readonly onClick: g.Trigger = new g.Trigger();
 	private actived = true;
-	private body: g.FrameSprite;
+	private fSprites: g.FrameSprite;
 
 	constructor(
 		scene: g.Scene,
@@ -16,12 +16,13 @@ export class Button extends g.E {
 		width: number,
 		height: number,
 		margin: ButtonMargin,
-		hitDebug?: boolean
+		frames: number[],
+		showAreaClick?: boolean
 	) {
 		if (margin == undefined) {
 			margin = { bottom: 0, left: 0, right: 0, top: 0 };
 		}
-		const visualWidth = width / 2;
+		const visualWidth = width / frames.length;
 		const areaWidth = visualWidth + margin.left + margin.right;
 		const areaHeight = height + margin.top + margin.bottom;
 
@@ -30,60 +31,61 @@ export class Button extends g.E {
 			width: areaWidth,
 			height: areaHeight,
 			touchable: true,
+			local: true,
 		});
-		if (hitDebug) {
-			let tmp = new g.FilledRect({
+		if (showAreaClick) {
+			let rect = new g.FilledRect({
 				scene: scene,
 				width: areaWidth,
 				height: areaHeight,
 				cssColor: "rgba(255,0,0,0.5)",
 				parent: this,
 			});
-			tmp.x = (this.width - tmp.width) / 2;
-			tmp.y = (this.height - tmp.height) / 2;
+			rect.x = (this.width - rect.width) / 2;
+			rect.y = (this.height - rect.height) / 2;
 		}
-		this.body = new g.FrameSprite({
+		this.fSprites = new g.FrameSprite({
 			scene: scene,
 			src: src,
 			width: visualWidth,
 			height: height,
 			frameNumber: 0,
-			frames: [0, 1, 2],
+			frames: frames,
 			touchable: false,
 			parent: this,
 		});
 
-		this.body.x = margin.left;
-		this.body.y = margin.top;
+		this.fSprites.x = margin.left;
+		this.fSprites.y = margin.top;
 
 		this.onPointUp.add((ev) => {
 			if (this.actived == false) {
 				return;
 			}
-			if (ev.player && ev.player.id === g.game.selfId) {
-				this.body.frameNumber = 0;
-				this.body.modified();
-				this.onClick.fire();
-			}
+			this.fSprites.frameNumber = 0;
+			this.fSprites.modified();
+			this.onClick.fire();
 		});
 		this.onPointDown.add((ev) => {
 			if (this.actived == false) {
 				return;
 			}
-			if (ev.player && ev.player.id === g.game.selfId) {
-				this.body.frameNumber = 1;
-				this.body.modified();
-			}
+			this.fSprites.frameNumber = 1;
+			this.fSprites.modified();
 		});
 	}
 	setActive(active: boolean) {
 		this.actived = active;
 		if (this.actived) {
-			this.body.frames = [0];
-			this.body.modified();
+			this.fSprites.frameNumber = 0;
+			this.fSprites.modified();
 		} else {
-			this.body.frames = [1];
-			this.body.modified();
+			if (this.fSprites.frames.length == 3) {
+				this.fSprites.frameNumber = 2;
+				this.fSprites.modified();
+			} else {
+				console.error("Cannot disable, not found frame number index 2");
+			}
 		}
 	}
 }
