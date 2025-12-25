@@ -38,6 +38,15 @@ export class addScore_sender extends client_sender {
 	}
 	score: number;
 }
+export class nextPuyo_sender extends client_sender {
+	constructor(playerIdx: number, colorMain: number, colorSub: number) {
+		super(playerIdx);
+		this.colorMain = colorMain;
+		this.colorSub = colorSub;
+	}
+	colorMain: number;
+	colorSub: number;
+}
 export class gameLoad_sender {
 	//layout: layout;
 	//buttonLoadSheet: buttonAndSheet[] = [];

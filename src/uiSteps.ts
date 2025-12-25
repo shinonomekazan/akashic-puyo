@@ -1,7 +1,12 @@
 import { BaseStep } from "./flow/step";
 import { FlowEventName } from "./flow/eventName";
 import { UIManager } from "./uiManager";
-import { addScore_sender, gameOver_sender, getSender } from "./sender";
+import {
+	addScore_sender,
+	gameOver_sender,
+	getSender,
+	nextPuyo_sender,
+} from "./sender";
 import { GameBoard } from "./gameBoard";
 
 export class UIStep extends BaseStep {
@@ -32,6 +37,17 @@ export class UIStep extends BaseStep {
 			case FlowEventName.GameLoad:
 				this.uiManager.hideLobbyUI();
 				this.uiManager.showScoreUI();
+				break;
+
+			case FlowEventName.UpdateNextPuyo:
+				const nextSender = getSender() as nextPuyo_sender;
+				if (nextSender) {
+					this.uiManager.updateNextPuyo(
+						nextSender.playerIdx,
+						nextSender.colorMain,
+						nextSender.colorSub
+					);
+				}
 				break;
 
 			case FlowEventName.AddScore:

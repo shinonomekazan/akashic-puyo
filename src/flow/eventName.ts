@@ -9,4 +9,5 @@ export enum FlowEventName {
 	AddScore,
 	GameOver,
 	ResetGame,
+	UpdateNextPuyo,
 }

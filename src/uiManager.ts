@@ -21,6 +21,10 @@ export class UIManager {
 
 	private scoreLabels: { [playerIdx: number]: g.Label } = {};
 
+	private nextPuyoContainers: { [playerIdx: number]: g.E } = {};
+	private nextPuyoMainNodes: { [playerIdx: number]: g.FilledRect } = {};
+	private nextPuyoSubNodes: { [playerIdx: number]: g.FilledRect } = {};
+
 	private gameOverContainer: g.E;
 	private gameOverLabel: g.Label;
 	private restartButton: g.FilledRect;
@@ -40,6 +44,7 @@ export class UIManager {
 
 		this.createLobbyUI();
 		this.createScoreUI();
+		this.createNextPuyoUI();
 		this.createGameOverUI();
 		this.createUIController();
 
@@ -49,29 +54,78 @@ export class UIManager {
 	}
 	private createUIController() {
 		const scene = this.scene;
-		this.controllerLayer = new g.E({ scene: scene, parent: this.layoutRoot });
-		let left = this.createButton("ArrowLeft", "/assets/ui/arrow-left.png", 100, 100, { left: 7, right: 0, top: 7, bottom: 7 }, 2);
-		let right = this.createButton("ArrowRight", "/assets/ui/arrow-right.png", 100, 150, { left: 0, right: 7, top: 7, bottom: 7 }, 2);
-		let up = this.createButton("ArrowUp", "/assets/ui/arrow-up.png", 100, 155, { left: 7, right: 7, top: 7, bottom: 1 }, 2);
-		let down = this.createButton("ArrowDown", "/assets/ui/arrow-down.png", 100, 160, { left: 7, right: 7, top: 0, bottom: 7 }, 2);
+		this.controllerLayer = new g.E({
+			scene: scene,
+			parent: this.layoutRoot,
+		});
+		let left = this.createButton(
+			"ArrowLeft",
+			"/assets/ui/arrow-left.png",
+			100,
+			100,
+			{ left: 7, right: 0, top: 7, bottom: 7 },
+			2
+		);
+		let right = this.createButton(
+			"ArrowRight",
+			"/assets/ui/arrow-right.png",
+			100,
+			150,
+			{ left: 0, right: 7, top: 7, bottom: 7 },
+			2
+		);
+		let up = this.createButton(
+			"ArrowUp",
+			"/assets/ui/arrow-up.png",
+			100,
+			155,
+			{ left: 7, right: 7, top: 7, bottom: 1 },
+			2
+		);
+		let down = this.createButton(
+			"ArrowDown",
+			"/assets/ui/arrow-down.png",
+			100,
+			160,
+			{ left: 7, right: 7, top: 0, bottom: 7 },
+			2
+		);
 		this.placeEntitiesAroundCenter(
 			scene,
 			{ x: 130, y: g.game.height - 150 },
 			[up, down, left, right]
-		)
-		let rotateCw = this.createButton("ArrowUp", "/assets/ui/rotate-cw.png", g.game.width - 200, right.y - right.height / 2, undefined, 1);
+		);
+		let rotateCw = this.createButton(
+			"ArrowUp",
+			"/assets/ui/rotate-cw.png",
+			g.game.width - 200,
+			right.y - right.height / 2,
+			undefined,
+			1
+		);
 		this.controllerLayer.append(rotateCw);
-		let rotateCCw = this.createButton("ArrowUpCCW", "/assets/ui/rotate-ccw.png", g.game.width - 200 - 150, right.y - right.height / 2, undefined, 1);
+		let rotateCCw = this.createButton(
+			"ArrowUpCCW",
+			"/assets/ui/rotate-ccw.png",
+			g.game.width - 200 - 150,
+			right.y - right.height / 2,
+			undefined,
+			1
+		);
 		this.controllerLayer.append(rotateCCw);
 		this.controllerLayer.hide();
 	}
-	private placeEntitiesAroundCenter(scene: g.Scene, center: g.CommonOffset, img: g.E[]) {
+	private placeEntitiesAroundCenter(
+		scene: g.Scene,
+		center: g.CommonOffset,
+		img: g.E[]
+	) {
 		const offset = 80;
 		const positions: g.CommonOffset[] = [
 			{ x: center.x, y: center.y - offset }, // up
 			{ x: center.x, y: center.y + offset }, // down
 			{ x: center.x - offset, y: center.y }, // left
-			{ x: center.x + offset, y: center.y }  // right
+			{ x: center.x + offset, y: center.y }, // right
 		];
 
 		for (let i = 0; i < 4; i++) {
@@ -83,14 +137,28 @@ export class UIManager {
 		}
 	}
 
-
-	private createButton(keyClick: string, imgPath: string, x: number, y: number, margin: ButtonMargin, scale: number = 1) {
+	private createButton(
+		keyClick: string,
+		imgPath: string,
+		x: number,
+		y: number,
+		margin: ButtonMargin,
+		scale: number = 1
+	) {
 		const img = this.scene.asset.getImage(imgPath);
-		let btn = new Button(this.scene, img, img.width, img.height, margin, [0, 1], false);
-		this.controllerLayer.append(btn)
+		let btn = new Button(
+			this.scene,
+			img,
+			img.width,
+			img.height,
+			margin,
+			[0, 1],
+			false
+		);
+		this.controllerLayer.append(btn);
 		btn.x = x;
 		btn.y = y;
-		btn.scale(scale)
+		btn.scale(scale);
 		btn.modified();
 		btn.onClick.add(() => {
 			this.onControlClick.fire(keyClick);
@@ -111,7 +179,7 @@ export class UIManager {
 			height: height,
 			cssColor: "gray",
 			opacity: 0.8,
-			touchable: true
+			touchable: true,
 		});
 
 		this.soundLabel = new g.Label({
@@ -123,7 +191,7 @@ export class UIManager {
 			textColor: "white",
 			width: width,
 			textAlign: "center",
-			y: 8
+			y: 8,
 		});
 
 		this.soundButton.onPointDown.add((ev) => {
@@ -157,7 +225,7 @@ export class UIManager {
 			y: g.game.height / 2 - height / 2,
 			width: width,
 			height: height,
-			touchable: true
+			touchable: true,
 		});
 
 		this.lobbyBg = new g.FilledRect({
@@ -166,7 +234,7 @@ export class UIManager {
 			width: width,
 			height: height,
 			cssColor: "gray",
-			opacity: 0.5
+			opacity: 0.5,
 		});
 
 		this.lobbyLabel = new g.Label({
@@ -178,7 +246,7 @@ export class UIManager {
 			textColor: "blue",
 			width: width,
 			textAlign: "center",
-			y: 10
+			y: 10,
 		});
 
 		this.lobbyReadySprite = new g.E({
@@ -188,7 +256,7 @@ export class UIManager {
 			y: g.game.height / 2 + height + 20,
 			width: width,
 			height: 50,
-			hidden: true
+			hidden: true,
 		});
 
 		new g.FilledRect({
@@ -197,7 +265,7 @@ export class UIManager {
 			width: width,
 			height: 50,
 			cssColor: "#00FF00",
-			opacity: 0.5
+			opacity: 0.5,
 		});
 
 		this.lobbyReadyLabel = new g.Label({
@@ -209,9 +277,8 @@ export class UIManager {
 			textColor: "white",
 			width: width,
 			textAlign: "center",
-			y: 10
+			y: 10,
 		});
-
 
 		this.lobbyContainer.onPointDown.add(() => {
 			this.onLobbyClick.fire();
@@ -238,9 +305,54 @@ export class UIManager {
 				y: 20,
 				width: boardWidth,
 				textAlign: "center",
-				hidden: true
+				hidden: true,
 			});
 			this.scoreLabels[i] = label;
+		}
+	}
+
+	private createNextPuyoUI() {
+		const boardWidth = GameBoard.COLS * GameBoard.puyoSize;
+		const gap = 50;
+		const totalWidth = 2 * boardWidth + gap;
+		const startX = (g.game.width - totalWidth) / 2;
+
+		for (let i = 0; i < 2; i++) {
+			const offsetX = startX + i * (boardWidth + gap);
+
+			const container = new g.E({
+				scene: this.scene,
+				parent: this.uiLayer,
+				x: offsetX + boardWidth + 5,
+				y: 60,
+				width: GameBoard.puyoSize,
+				height: GameBoard.puyoSize * 2,
+				hidden: true,
+			});
+
+			const sub = new g.FilledRect({
+				scene: this.scene,
+				parent: container,
+				x: 0,
+				y: 0,
+				width: GameBoard.puyoSize - 2,
+				height: GameBoard.puyoSize - 2,
+				cssColor: "white",
+			});
+
+			const main = new g.FilledRect({
+				scene: this.scene,
+				parent: container,
+				x: 0,
+				y: GameBoard.puyoSize,
+				width: GameBoard.puyoSize - 2,
+				height: GameBoard.puyoSize - 2,
+				cssColor: "white",
+			});
+
+			this.nextPuyoContainers[i] = container;
+			this.nextPuyoSubNodes[i] = sub;
+			this.nextPuyoMainNodes[i] = main;
 		}
 	}
 
@@ -261,6 +373,10 @@ export class UIManager {
 				this.scoreLabels[i].x = offsetX;
 				this.scoreLabels[i].modified();
 			}
+			if (this.nextPuyoContainers[i]) {
+				this.nextPuyoContainers[i].x = offsetX + boardWidth + 5;
+				this.nextPuyoContainers[i].modified();
+			}
 		}
 	}
 
@@ -270,7 +386,7 @@ export class UIManager {
 			parent: this.uiLayer,
 			width: g.game.width,
 			height: g.game.height,
-			hidden: true
+			hidden: true,
 		});
 
 		new g.FilledRect({
@@ -279,7 +395,7 @@ export class UIManager {
 			width: g.game.width,
 			height: g.game.height,
 			cssColor: "black",
-			opacity: 0.7
+			opacity: 0.7,
 		});
 
 		this.gameOverLabel = new g.Label({
@@ -291,7 +407,7 @@ export class UIManager {
 			textColor: "white",
 			width: g.game.width,
 			textAlign: "center",
-			y: g.game.height / 2 - 100
+			y: g.game.height / 2 - 100,
 		});
 
 		const btnWidth = 200;
@@ -304,7 +420,7 @@ export class UIManager {
 			width: btnWidth,
 			height: btnHeight,
 			cssColor: "orange",
-			touchable: true
+			touchable: true,
 		});
 
 		this.restartLabel = new g.Label({
@@ -316,7 +432,7 @@ export class UIManager {
 			textColor: "black",
 			width: btnWidth,
 			textAlign: "center",
-			y: 12
+			y: 12,
 		});
 		this.restartLabel.x = (btnWidth - this.restartLabel.width) / 2;
 		this.restartLabel.modified();
@@ -333,6 +449,36 @@ export class UIManager {
 		}
 	}
 
+	public updateNextPuyo(
+		playerIdx: number,
+		colorMain: number,
+		colorSub: number
+	) {
+		if (
+			this.nextPuyoMainNodes[playerIdx] &&
+			this.nextPuyoSubNodes[playerIdx]
+		) {
+			const colors = [
+				"black",
+				"red",
+				"blue",
+				"green",
+				"yellow",
+				"purple",
+			];
+			this.nextPuyoMainNodes[playerIdx].cssColor =
+				colors[colorMain] || "white";
+			this.nextPuyoMainNodes[playerIdx].modified();
+			this.nextPuyoSubNodes[playerIdx].cssColor =
+				colors[colorSub] || "white";
+			this.nextPuyoSubNodes[playerIdx].modified();
+
+			if (this.nextPuyoContainers[playerIdx]) {
+				this.nextPuyoContainers[playerIdx].show();
+			}
+		}
+	}
+
 	public showScoreUI() {
 		this.controllerLayer.show();
 		for (let key in this.scoreLabels) {
@@ -344,13 +490,21 @@ export class UIManager {
 		for (let key in this.scoreLabels) {
 			this.scoreLabels[key].hide();
 		}
+		for (let key in this.nextPuyoContainers) {
+			this.nextPuyoContainers[key].hide();
+		}
 	}
 
-	public updateLobbyUI(textKey: string, enableButton: boolean, showWaitSprite: boolean) {
+	public updateLobbyUI(
+		textKey: string,
+		enableButton: boolean,
+		showWaitSprite: boolean
+	) {
 		const text = Localization.getText(textKey);
 		this.lobbyLabel.text = text;
 		this.lobbyLabel.invalidate();
-		this.lobbyLabel.x = (this.lobbyContainer.width - this.lobbyLabel.width) / 2;
+		this.lobbyLabel.x =
+			(this.lobbyContainer.width - this.lobbyLabel.width) / 2;
 		this.lobbyLabel.modified();
 
 		if (enableButton) {
@@ -375,7 +529,6 @@ export class UIManager {
 	}
 
 	public hideLobbyUI() {
-
 		this.lobbyContainer.hide();
 		this.lobbyReadySprite.hide();
 	}

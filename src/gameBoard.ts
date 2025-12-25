@@ -1,6 +1,6 @@
 import { FlowEventName } from "./flow/eventName";
 import { FlowManager } from "./flow/flowManager";
-import { addScore_sender, gameOver_sender } from "./sender";
+import { addScore_sender, gameOver_sender, nextPuyo_sender } from "./sender";
 
 export class GameBoard {
 	public static readonly ROWS = 12;
@@ -15,6 +15,10 @@ export class GameBoard {
 		colorMain: number;
 		colorSub: number;
 		rot: number;
+	} = null;
+	public nextPuyo: {
+		colorMain: number;
+		colorSub: number;
 	} = null;
 	public boardNode: g.E = null;
 	public ghostPuyoNode: g.E = null;
@@ -130,6 +134,7 @@ export class GameBoard {
 		this.isAnimating = false;
 		this.isPaused = false;
 		this.currentPuyo = null;
+		this.nextPuyo = null;
 		this.renderBoard();
 		if (this.ghostPuyoNode) this.ghostPuyoNode.destroy();
 		if (this.currentPuyoNode) this.currentPuyoNode.destroy();
@@ -195,11 +200,18 @@ export class GameBoard {
 			return;
 		}
 
+		if (!this.nextPuyo) {
+			this.nextPuyo = {
+				colorMain: Math.floor(this.rng.generate() * 3) + 1,
+				colorSub: Math.floor(this.rng.generate() * 3) + 1,
+			};
+		}
+
 		const nextPuyo = {
 			x: 2,
 			y: 1,
-			colorMain: Math.floor(this.rng.generate() * 3) + 1,
-			colorSub: Math.floor(this.rng.generate() * 3) + 1,
+			colorMain: this.nextPuyo.colorMain,
+			colorSub: this.nextPuyo.colorSub,
 			rot: 0,
 		};
 
@@ -212,6 +224,21 @@ export class GameBoard {
 		}
 
 		this.currentPuyo = nextPuyo;
+
+		this.nextPuyo = {
+			colorMain: Math.floor(this.rng.generate() * 3) + 1,
+			colorSub: Math.floor(this.rng.generate() * 3) + 1,
+		};
+
+		this.flowManager.fireAsync(
+			FlowEventName.UpdateNextPuyo,
+			new nextPuyo_sender(
+				this.playerIndex,
+				this.nextPuyo.colorMain,
+				this.nextPuyo.colorSub
+			)
+		);
+
 		this.updatePuyoView();
 	}
 	public getSubPos(x: number, y: number, rot: number) {

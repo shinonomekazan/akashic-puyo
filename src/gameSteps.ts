@@ -12,8 +12,14 @@ export class GameStateStep extends BaseStep {
 		switch (eventName) {
 			case FlowEventName.GameLoad:
 				for (let id in GameBoard.instances) {
-					GameBoard.get(id).fillBackground();
-					GameBoard.get(id).spawnPuyo();
+					const board = GameBoard.get(id);
+					board.fillBackground();
+					board.spawnPuyo();
+					this.mainScene.uiManager.updateNextPuyo(
+						board.playerIndex,
+						board.nextPuyo.colorMain,
+						board.nextPuyo.colorSub
+					);
 				}
 				break;
 			case FlowEventName.GameOver:

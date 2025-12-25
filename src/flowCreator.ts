@@ -32,6 +32,10 @@ export class FlowCreator {
 		);
 
 		manager.addFlow(
+			new Flow(FlowEventName.UpdateNextPuyo, [new UIStep(uiManager)])
+		);
+
+		manager.addFlow(
 			new Flow(FlowEventName.Move, [soundStep, new TransStep()])
 		);
 		manager.addFlow(
