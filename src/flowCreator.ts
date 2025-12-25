@@ -16,50 +16,30 @@ export class FlowCreator {
 		soundManager: SoundManager
 	) {
 		const soundStep = new SoundStep(soundManager);
+		const uiStep = new UIStep(uiManager);
+		const gameStateStep = new GameStateStep(mainScene);
+		const transStep = new TransStep();
 
 		manager.addFlow(
-			new Flow(FlowEventName.GameLoad, [
-				new UIStep(uiManager),
-				new GameStateStep(mainScene),
-			])
+			new Flow(FlowEventName.GameLoad, [uiStep, gameStateStep])
 		);
 
-		manager.addFlow(
-			new Flow(FlowEventName.UpdateLobbyUI, [new UIStep(uiManager)])
-		);
-		manager.addFlow(
-			new Flow(FlowEventName.HideLobbyUI, [new UIStep(uiManager)])
-		);
+		manager.addFlow(new Flow(FlowEventName.UpdateLobbyUI, [uiStep]));
+		manager.addFlow(new Flow(FlowEventName.HideLobbyUI, [uiStep]));
+
+		manager.addFlow(new Flow(FlowEventName.UpdateNextPuyo, [uiStep]));
+
+		manager.addFlow(new Flow(FlowEventName.Move, [soundStep, transStep]));
+		manager.addFlow(new Flow(FlowEventName.Rotate, [soundStep, transStep]));
+
+		manager.addFlow(new Flow(FlowEventName.AddScore, [soundStep, uiStep]));
 
 		manager.addFlow(
-			new Flow(FlowEventName.UpdateNextPuyo, [new UIStep(uiManager)])
-		);
-
-		manager.addFlow(
-			new Flow(FlowEventName.Move, [soundStep, new TransStep()])
-		);
-		manager.addFlow(
-			new Flow(FlowEventName.Rotate, [soundStep, new TransStep()])
+			new Flow(FlowEventName.GameOver, [soundStep, gameStateStep, uiStep])
 		);
 
 		manager.addFlow(
-			new Flow(FlowEventName.AddScore, [soundStep, new UIStep(uiManager)])
-		);
-
-		manager.addFlow(
-			new Flow(FlowEventName.GameOver, [
-				soundStep,
-				new GameStateStep(mainScene),
-				new UIStep(uiManager),
-			])
-		);
-
-		manager.addFlow(
-			new Flow(FlowEventName.ResetGame, [
-				new UIStep(uiManager),
-				new GameStateStep(mainScene),
-				new UIStep(uiManager),
-			])
+			new Flow(FlowEventName.ResetGame, [uiStep, gameStateStep, uiStep])
 		);
 	}
 }
