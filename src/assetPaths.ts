@@ -18,6 +18,9 @@ export const assetPaths = [
 	"/assets/ui/arrow-up.png",
 	"/assets/ui/rotate-cw.png",
 	"/assets/ui/rotate-ccw.png",
+	//imgs
+	"/assets/white.png",
+	"/assets/yellow.png",
 	//sound
 	"/assets/sound/se_gameover",
 	"/assets/sound/se_harddrop",

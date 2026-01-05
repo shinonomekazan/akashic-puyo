@@ -262,8 +262,8 @@ export class GameBoard {
 
 		if (!this.nextPuyo) {
 			this.nextPuyo = {
-				colorMain: Math.floor(this.rng.generate() * 3) + 1,
-				colorSub: Math.floor(this.rng.generate() * 3) + 1,
+				colorMain: Math.floor(this.rng.generate() * 2) + 1,
+				colorSub: Math.floor(this.rng.generate() * 2) + 1,
 			};
 			this.rngIterationCount += 2;
 		}
@@ -287,8 +287,8 @@ export class GameBoard {
 		this.currentPuyo = nextPuyo;
 
 		this.nextPuyo = {
-			colorMain: Math.floor(this.rng.generate() * 3) + 1,
-			colorSub: Math.floor(this.rng.generate() * 3) + 1,
+			colorMain: Math.floor(this.rng.generate() * 2) + 1,
+			colorSub: Math.floor(this.rng.generate() * 2) + 1,
 		};
 		this.rngIterationCount += 2;
 
@@ -556,14 +556,14 @@ export class GameBoard {
 			for (let c = 0; c < GameBoard.COLS; c++) {
 				const colorIdx = targetBoard[r][c];
 				if (colorIdx !== 0) {
-					new g.FilledRect({
+					new g.Sprite({
 						scene: g.game.scene(),
 						parent: this.boardNode,
+						src: g.game.scene().asset.getImage(this.getColor(colorIdx)),
 						x: c * GameBoard.puyoSize,
 						y: r * GameBoard.puyoSize,
 						width: GameBoard.puyoSize - 2,
 						height: GameBoard.puyoSize - 2,
-						cssColor: this.getColor(colorIdx),
 					});
 				}
 			}
@@ -603,7 +603,7 @@ export class GameBoard {
 		const createPuyo = (
 			x: number,
 			y: number,
-			color: string,
+			assetPath: string,
 			isGhost: boolean
 		) => {
 			const size = isGhost
@@ -613,14 +613,15 @@ export class GameBoard {
 			const targetParent = isGhost
 				? this.ghostPuyoNode
 				: this.currentPuyoNode;
-			new g.FilledRect({
+			new g.Sprite({
 				scene: g.game.scene(),
 				parent: targetParent,
+				src: g.game.scene().asset.getImage(assetPath),
 				x: x * GameBoard.puyoSize + (isGhost ? offset : 0),
 				y: y * GameBoard.puyoSize + (isGhost ? offset : 0),
 				width: size,
 				height: size,
-				cssColor: color,
+				opacity: isGhost ? 0.5 : 1,
 			});
 		};
 		if (this.currentPuyo) {
@@ -670,8 +671,12 @@ export class GameBoard {
 		}
 	}
 
+	public static getAssetPath(idx: number): string {
+		const assets = ["", "/assets/white.png", "/assets/yellow.png"];
+		return assets[idx];
+	}
+
 	public getColor(idx: number): string {
-		const colors = ["black", "red", "blue", "green", "yellow", "purple"];
-		return colors[idx] || "white";
+		return GameBoard.getAssetPath(idx);
 	}
 }

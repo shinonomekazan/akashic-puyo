@@ -22,8 +22,8 @@ export class UIManager {
 	private scoreLabels: { [playerIdx: number]: g.Label } = {};
 
 	private nextPuyoContainers: { [playerIdx: number]: g.E } = {};
-	private nextPuyoMainNodes: { [playerIdx: number]: g.FilledRect } = {};
-	private nextPuyoSubNodes: { [playerIdx: number]: g.FilledRect } = {};
+	private nextPuyoMainNodes: { [playerIdx: number]: g.Sprite } = {};
+	private nextPuyoSubNodes: { [playerIdx: number]: g.Sprite } = {};
 
 	private gameOverContainer: g.E;
 	private gameOverLabel: g.Label;
@@ -334,24 +334,24 @@ export class UIManager {
 				hidden: true,
 			});
 
-			const sub = new g.FilledRect({
+			const sub = new g.Sprite({
 				scene: this.scene,
 				parent: container,
+				src: this.scene.asset.getImage("/assets/white.png"),
 				x: 0,
 				y: 0,
 				width: GameBoard.puyoSize - 2,
 				height: GameBoard.puyoSize - 2,
-				cssColor: "white",
 			});
 
-			const main = new g.FilledRect({
+			const main = new g.Sprite({
 				scene: this.scene,
 				parent: container,
+				src: this.scene.asset.getImage("/assets/white.png"),
 				x: 0,
 				y: GameBoard.puyoSize,
 				width: GameBoard.puyoSize - 2,
 				height: GameBoard.puyoSize - 2,
-				cssColor: "white",
 			});
 
 			this.nextPuyoContainers[i] = container;
@@ -501,19 +501,14 @@ export class UIManager {
 			this.nextPuyoMainNodes[playerIdx] &&
 			this.nextPuyoSubNodes[playerIdx]
 		) {
-			const colors = [
-				"black",
-				"red",
-				"blue",
-				"green",
-				"yellow",
-				"purple",
-			];
-			this.nextPuyoMainNodes[playerIdx].cssColor =
-				colors[colorMain] || "white";
+			const assetMain = GameBoard.getAssetPath(colorMain);
+			this.nextPuyoMainNodes[playerIdx].src = this.scene.asset.getImage(assetMain);
+			this.nextPuyoMainNodes[playerIdx].invalidate();
 			this.nextPuyoMainNodes[playerIdx].modified();
-			this.nextPuyoSubNodes[playerIdx].cssColor =
-				colors[colorSub] || "white";
+
+			const assetSub = GameBoard.getAssetPath(colorSub);
+			this.nextPuyoSubNodes[playerIdx].src = this.scene.asset.getImage(assetSub);
+			this.nextPuyoSubNodes[playerIdx].invalidate();
 			this.nextPuyoSubNodes[playerIdx].modified();
 
 			if (this.nextPuyoContainers[playerIdx]) {
