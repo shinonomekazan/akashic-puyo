@@ -7,7 +7,7 @@ export class SoundManager {
 	}
 
 	public play(assetId: string) {
-		if (this.isMuted) return;
+		if (this.isMuted || g.game.isSkipping) return;
 		try {
 			this.scene.asset.getAudioById(assetId).play();
 		} catch (e) {

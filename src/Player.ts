@@ -16,6 +16,18 @@ export class Player {
 		this.flowManager = flowManager;
 	}
 
+	public getSnapshot() {
+		return {
+			id: this.id,
+			pIdx: this.pIdx,
+			ready: this.ready
+		};
+	}
+
+	public initFromSnapshot(data: any) {
+		this.ready = data.ready;
+	}
+
 	public handleInput(key: string, dropTimerReset: () => void) {
 		const board = GameBoard.get(this.id);
 		if (!board || board.isPaused || board.isAnimating) return;

@@ -82,6 +82,15 @@ export class FlowManager {
 		});
 	}
 
+	public isRunning(eventName: FlowEventName): boolean {
+		for (let i = 0; i < this.currentFlows.length; i++) {
+			if (this.currentFlows[i].eventName == eventName) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public async fireAsync(
 		eventName: FlowEventName,
 		sender: object = undefined
@@ -89,16 +98,14 @@ export class FlowManager {
 		let targetFlow: Flow = null;
 		for (let i = 0; i < this.flows.length; i++) {
 			if (this.flows[i].eventName == eventName) {
-				targetFlow = this.flows[i];
-				break;
+				if (!this.currentFlows.includes(this.flows[i])) {
+					targetFlow = this.flows[i];
+					break;
+				}
 			}
 		}
 
 		if (!targetFlow) return;
-
-		if (this.currentFlows.includes(targetFlow)) {
-			return;
-		}
 
 		targetFlow.stepIndex = 0;
 		this.currentFlows.push(targetFlow);
@@ -110,10 +117,6 @@ export class FlowManager {
 					setSender(sender);
 				}
 				targetFlow.stepIndex = i;
-
-				// PASS SENDER INFO TO STEP
-				// @ts-ignore
-				//targetFlow.steps[i].currentFlowSender = sender;
 
 				if (globalThis.debugMode && targetFlow.fireDebugs[i]) {
 					targetFlow.fireDebugs[i].active();

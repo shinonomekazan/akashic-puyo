@@ -1,7 +1,7 @@
 import { BaseStep } from "./flow/step";
 import { FlowEventName } from "./flow/eventName";
 import { GameBoard } from "./gameBoard";
-import { getSender, move_sender, rotate_sender } from "./sender";
+import { gameOver_sender, getSender, move_sender, rotate_sender } from "./sender";
 import { MainScene } from "./mainScene";
 
 export class GameStateStep extends BaseStep {
@@ -14,22 +14,32 @@ export class GameStateStep extends BaseStep {
 				for (let id in GameBoard.instances) {
 					const board = GameBoard.get(id);
 					board.fillBackground();
-					board.spawnPuyo();
-					this.mainScene.uiManager.updateNextPuyo(
-						board.playerIndex,
-						board.nextPuyo.colorMain,
-						board.nextPuyo.colorSub
-					);
+
+					if (board.nextPuyo) {
+						this.mainScene.uiManager.updateNextPuyo(
+							board.playerIndex,
+							board.nextPuyo.colorMain,
+							board.nextPuyo.colorSub
+						);
+					}
 				}
 				break;
 			case FlowEventName.GameOver:
-				this.mainScene.setGameStarted(false);
+				const sender = getSender(eventName) as gameOver_sender;
+				if (sender) {
+					this.mainScene.setGameOver(sender.loserPlayerIdx, sender.reason);
+				} else {
+					this.mainScene.setGameStarted(false);
+				}
 				break;
 			case FlowEventName.ResetGame:
 				for (let id in GameBoard.instances) {
 					const board = GameBoard.get(id);
 					board.reset();
 				}
+				break;
+			case FlowEventName.UpdateNextPuyo:
+				this.mainScene.saveGameSnapshot();
 				break;
 		}
 	}
@@ -56,7 +66,6 @@ export class TransStep extends BaseStep {
 				}
 				board.updatePuyoView();
 				await board.lockPuyo();
-				board.spawnPuyo();
 				return;
 			}
 			const nextX = board.currentPuyo.x + sender.xy.x;
@@ -69,7 +78,6 @@ export class TransStep extends BaseStep {
 			} else {
 				if (sender.xy.y > 0) {
 					await board.lockPuyo();
-					board.spawnPuyo();
 				}
 			}
 		} else if (eventName === FlowEventName.Rotate) {

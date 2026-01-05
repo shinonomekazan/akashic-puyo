@@ -30,6 +30,9 @@ export class UIManager {
 	private restartButton: g.FilledRect;
 	private restartLabel: g.Label;
 
+	private loadingContainer: g.E;
+	private loadingLabel: g.Label;
+
 	private soundButton: g.FilledRect;
 	private soundLabel: g.Label;
 	private soundManager: SoundManager;
@@ -46,6 +49,7 @@ export class UIManager {
 		this.createScoreUI();
 		this.createNextPuyoUI();
 		this.createGameOverUI();
+		this.createLoadingUI();
 		this.createUIController();
 
 		if (this.soundManager) {
@@ -440,6 +444,45 @@ export class UIManager {
 		this.restartButton.onPointDown.add(() => {
 			this.onRestartClick.fire();
 		});
+	}
+
+	private createLoadingUI() {
+		this.loadingContainer = new g.E({
+			scene: this.scene,
+			parent: this.uiLayer,
+			width: g.game.width,
+			height: g.game.height,
+			hidden: true,
+		});
+
+		new g.FilledRect({
+			scene: this.scene,
+			parent: this.loadingContainer,
+			width: g.game.width,
+			height: g.game.height,
+			cssColor: "black",
+			opacity: 0.5,
+		});
+
+		this.loadingLabel = new g.Label({
+			scene: this.scene,
+			parent: this.loadingContainer,
+			font: globalThis.font,
+			text: "Loading...",
+			fontSize: 40,
+			textColor: "white",
+			width: g.game.width,
+			textAlign: "center",
+			y: g.game.height / 2 - 20,
+		});
+	}
+
+	public showLoadingUI() {
+		this.loadingContainer.show();
+	}
+
+	public hideLoadingUI() {
+		this.loadingContainer.hide();
 	}
 
 	public updateScore(playerIdx: number, score: number) {

@@ -2,6 +2,12 @@ import { FlowEventName } from "./flow/eventName";
 import { FlowManager } from "./flow/flowManager";
 import { addScore_sender, gameOver_sender, nextPuyo_sender } from "./sender";
 
+interface ResolveStep {
+	type: "clear" | "drop";
+	matches?: { x: number; y: number }[];
+	score?: number;
+}
+
 export class GameBoard {
 	public static readonly ROWS = 12;
 	public static readonly COLS = 6;
@@ -31,8 +37,10 @@ export class GameBoard {
 	public playerIndex: number;
 	public id: string;
 
+	public busyUntil: number = 0;
+	private snapshotBoard: number[][] = null;
+
 	private rootParent: g.E;
-	private pendingSpawn: boolean = false;
 	private backgroundNode: g.FilledRect = null;
 
 	private static colorBackground: string[] = [
@@ -44,17 +52,21 @@ export class GameBoard {
 	];
 	private rng: g.RandomGenerator;
 	private flowManager: FlowManager;
+	private rngSeed: number;
+	public rngIterationCount: number = 0;
 
 	constructor(
 		id: string,
 		playerIndex: number,
 		rng: g.RandomGenerator,
-		flowManager: FlowManager
+		flowManager: FlowManager,
+		rngSeed?: number
 	) {
 		this.id = id;
 		this.playerIndex = playerIndex;
 		this.rng = rng;
 		this.flowManager = flowManager;
+		this.rngSeed = rngSeed;
 	}
 
 	public static createPlayerBoard(
@@ -62,13 +74,21 @@ export class GameBoard {
 		playerIndex: number,
 		scene: g.Scene,
 		parent: g.E,
-		flowManager: FlowManager
+		flowManager: FlowManager,
+		forceSeed?: number
 	): GameBoard {
-		const seed = g.game.random.generate();
-		const rng = new g.XorshiftRandomGenerator(Math.floor(seed * 1000000));
-		const state = new GameBoard(id, playerIndex, rng, flowManager);
-		state.init(scene, parent);
+		let rngSeed: number;
+		if (forceSeed !== undefined) {
+			rngSeed = forceSeed;
+		} else {
+			const seed = g.game.random.generate();
+			rngSeed = Math.floor(seed * 1000000);
+		}
+
+		const rng = new g.XorshiftRandomGenerator(rngSeed);
+		const state = new GameBoard(id, playerIndex, rng, flowManager, rngSeed);
 		this.instances[id] = state;
+		state.init(scene, parent);
 		return state;
 	}
 
@@ -83,6 +103,45 @@ export class GameBoard {
 			}
 		}
 		return null;
+	}
+
+	public getSnapshot() {
+		return {
+			id: this.id,
+			playerIndex: this.playerIndex,
+			board: this.board,
+			score: this.score,
+			currentPuyo: this.currentPuyo,
+			nextPuyo: this.nextPuyo,
+			rngSeed: this.rngSeed,
+			rngIterationCount: this.rngIterationCount,
+			busyUntil: this.busyUntil
+		};
+	}
+
+	public initFromSnapshot(data: any) {
+		this.board = data.board;
+		this.score = data.score;
+		this.currentPuyo = data.currentPuyo;
+		this.nextPuyo = data.nextPuyo;
+		this.rngSeed = data.rngSeed;
+		this.rngIterationCount = data.rngIterationCount || 0;
+
+		this.busyUntil = 0;
+		this.isAnimating = false;
+
+		this.applyGravity(this.board);
+
+		if (this.rngSeed !== undefined) {
+			this.rng = new g.XorshiftRandomGenerator(this.rngSeed);
+			for (let i = 0; i < this.rngIterationCount; i++) {
+				this.rng.generate();
+			}
+		}
+
+		this.fillBackground();
+		this.renderBoard();
+		this.updatePuyoView();
 	}
 
 	private getVisualIndex(): number {
@@ -135,6 +194,8 @@ export class GameBoard {
 		this.isPaused = false;
 		this.currentPuyo = null;
 		this.nextPuyo = null;
+		this.busyUntil = 0;
+		this.snapshotBoard = null;
 		this.renderBoard();
 		if (this.ghostPuyoNode) this.ghostPuyoNode.destroy();
 		if (this.currentPuyoNode) this.currentPuyoNode.destroy();
@@ -189,14 +250,13 @@ export class GameBoard {
 			height: GameBoard.puyoSize * GameBoard.ROWS,
 			cssColor:
 				GameBoard.colorBackground[
-					this.playerIndex % GameBoard.colorBackground.length
+				this.playerIndex % GameBoard.colorBackground.length
 				],
 		});
 	}
 
 	public spawnPuyo() {
 		if (this.isAnimating) {
-			this.pendingSpawn = true;
 			return;
 		}
 
@@ -205,6 +265,7 @@ export class GameBoard {
 				colorMain: Math.floor(this.rng.generate() * 3) + 1,
 				colorSub: Math.floor(this.rng.generate() * 3) + 1,
 			};
+			this.rngIterationCount += 2;
 		}
 
 		const nextPuyo = {
@@ -229,6 +290,7 @@ export class GameBoard {
 			colorMain: Math.floor(this.rng.generate() * 3) + 1,
 			colorSub: Math.floor(this.rng.generate() * 3) + 1,
 		};
+		this.rngIterationCount += 2;
 
 		this.flowManager.fireAsync(
 			FlowEventName.UpdateNextPuyo,
@@ -269,118 +331,169 @@ export class GameBoard {
 
 	public async lockPuyo() {
 		if (!this.currentPuyo) return;
+
 		const { x, y, rot, colorMain, colorSub } = this.currentPuyo;
 		const sub = this.getSubPos(x, y, rot);
+
 		this.board[y][x] = colorMain;
 		this.board[sub.y][sub.x] = colorSub;
 		this.currentPuyo = null;
 		this.updatePuyoView();
+
+		const startVisualBoard = this.board.map((row) => [...row]);
+		const steps = this.calculateResolveSteps();
+		await this.animateResolveSteps(startVisualBoard, steps);
 		this.renderBoard();
-		this.resolveBoard();
 	}
 
-	private async resolveBoard() {
+	private calculateResolveSteps(): ResolveStep[] {
+		const steps: ResolveStep[] = [];
 		let causedClear = false;
+		let tempBoard = this.board.map(row => [...row]);
+
 		do {
-			causedClear = await this.checkAndClearMatches();
-			if (causedClear) {
-				this.applyGravity();
-				this.renderBoard();
-				await new Promise<void>((resolve) =>
-					g.game.scene().setTimeout(resolve, 300)
-				);
+			causedClear = false;
+			let visited = Array.from({ length: GameBoard.ROWS }, () =>
+				Array(GameBoard.COLS).fill(false)
+			);
+			let toRemove: { x: number; y: number }[] = [];
+
+			for (let r = 0; r < GameBoard.ROWS; r++) {
+				for (let c = 0; c < GameBoard.COLS; c++) {
+					if (tempBoard[r][c] !== 0 && !visited[r][c]) {
+						let matches: { x: number; y: number }[] = [];
+						this.findConnectedInBoard(
+							tempBoard,
+							c,
+							r,
+							tempBoard[r][c],
+							visited,
+							matches
+						);
+						if (matches.length >= 4) toRemove.push(...matches);
+					}
+				}
+			}
+
+			if (toRemove.length > 0) {
+				causedClear = true;
+				const score = toRemove.length * 100;
+				this.score += score;
+
+				steps.push({
+					type: "clear",
+					matches: toRemove,
+					score: score,
+				});
+
+				toRemove.forEach((p) => {
+					tempBoard[p.y][p.x] = 0;
+					this.board[p.y][p.x] = 0;
+				});
+
+				steps.push({
+					type: "drop",
+				});
+
+				this.applyGravity(tempBoard);
+				this.applyGravity(this.board);
 			}
 		} while (causedClear);
 
-		this.isAnimating = false;
-
-		if (this.pendingSpawn) {
-			this.pendingSpawn = false;
-			this.spawnPuyo();
-		}
+		return steps;
 	}
 
-	private async checkAndClearMatches(): Promise<boolean> {
-		let visited = Array.from({ length: GameBoard.ROWS }, () =>
-			Array(GameBoard.COLS).fill(false)
-		);
-		let toRemove: { x: number; y: number }[] = [];
+	private async animateResolveSteps(
+		visualBoard: number[][],
+		steps: ResolveStep[]
+	) {
+		if (steps.length === 0) return;
 
-		for (let r = 0; r < GameBoard.ROWS; r++) {
-			for (let c = 0; c < GameBoard.COLS; c++) {
-				if (this.board[r][c] !== 0 && !visited[r][c]) {
-					let matches: { x: number; y: number }[] = [];
-					this.findConnected(
-						c,
-						r,
-						this.board[r][c],
-						visited,
-						matches
-					);
-					if (matches.length >= 4) toRemove.push(...matches);
+		this.isAnimating = true;
+		this.renderBoard(visualBoard);
+		for (const step of steps) {
+			const STEP_DELAY = 15;
+			const BLINK_DURATION = 40;
+			const BLINK_INTERVAL = 8;
+
+			this.busyUntil = g.game.age + (step.type === "clear" ? BLINK_DURATION + STEP_DELAY : STEP_DELAY);
+
+			if (step.type === "clear") {
+				this.flowManager.fireAsync(
+					FlowEventName.AddScore,
+					new addScore_sender(this.playerIndex, step.score)
+				);
+
+				if (!g.game.isSkipping) {
+					await this.waitFrames(STEP_DELAY);
+
+					const scene = g.game.scene();
+					const blinkers: g.FilledRect[] = [];
+					step.matches.forEach((p) => {
+						const rect = new g.FilledRect({
+							scene: scene,
+							parent: this.boardNode,
+							x: p.x * GameBoard.puyoSize,
+							y: p.y * GameBoard.puyoSize,
+							width: GameBoard.puyoSize - 2,
+							height: GameBoard.puyoSize - 2,
+							cssColor: "white",
+							opacity: 1,
+						});
+						blinkers.push(rect);
+					});
+
+					let elapsed = 0;
+					let visible = true;
+					while (elapsed < BLINK_DURATION) {
+						visible = !visible;
+						blinkers.forEach((b) => {
+							b.opacity = visible ? 1 : 0;
+							b.modified();
+						});
+						await this.waitFrames(BLINK_INTERVAL);
+						elapsed += BLINK_INTERVAL;
+					}
+
+					blinkers.forEach((b) => b.destroy());
+				}
+
+				step.matches.forEach((p) => {
+					visualBoard[p.y][p.x] = 0;
+				});
+				this.renderBoard(visualBoard);
+
+			} else if (step.type === "drop") {
+				this.applyGravity(visualBoard);
+				this.renderBoard(visualBoard);
+
+				if (!g.game.isSkipping) {
+					await this.waitFrames(STEP_DELAY);
 				}
 			}
 		}
 
-		if (toRemove.length > 0) {
-			this.isAnimating = true;
-
-			const addedScore = toRemove.length * 100;
-			this.flowManager.fireAsync(
-				FlowEventName.AddScore,
-				new addScore_sender(this.playerIndex, addedScore)
-			);
-
-			await new Promise<void>((resolve) =>
-				g.game.scene().setTimeout(resolve, 300)
-			);
-			const scene = g.game.scene();
-			const blinkers: g.FilledRect[] = [];
-			toRemove.forEach((p) => {
-				const rect = new g.FilledRect({
-					scene: scene,
-					parent: this.boardNode,
-					x: p.x * GameBoard.puyoSize,
-					y: p.y * GameBoard.puyoSize,
-					width: GameBoard.puyoSize - 2,
-					height: GameBoard.puyoSize - 2,
-					cssColor: "white",
-					opacity: 0,
-				});
-				blinkers.push(rect);
-			});
-
-			await new Promise<void>((resolve) => {
-				let elapsed = 0;
-				const duration = 1000;
-				const blinkSpeed = 100;
-				let visible = false;
-				const interval = scene.setInterval(() => {
-					elapsed += blinkSpeed;
-					visible = !visible;
-					blinkers.forEach((b) => {
-						b.opacity = visible ? 0.7 : 0;
-						b.modified();
-					});
-					if (elapsed >= duration) {
-						scene.clearInterval(interval);
-						resolve();
-					}
-				}, blinkSpeed);
-			});
-
-			blinkers.forEach((b) => b.destroy());
-			toRemove.forEach((p) => {
-				this.board[p.y][p.x] = 0;
-			});
-
-			this.isAnimating = false;
-			return true;
-		}
-		return false;
+		this.isAnimating = false;
+		this.busyUntil = 0;
 	}
 
-	private findConnected(
+	private async waitFrames(frames: number): Promise<void> {
+		if (frames <= 0) return;
+		return new Promise<void>((resolve) => {
+			let remaining = frames;
+			const handler = () => {
+				remaining--;
+				if (remaining <= 0) {
+					g.game.scene().onUpdate.remove(handler);
+					resolve();
+				}
+			};
+			g.game.scene().onUpdate.add(handler);
+		});
+	}
+
+	private findConnectedInBoard(
+		board: number[][],
 		x: number,
 		y: number,
 		color: number,
@@ -389,7 +502,7 @@ export class GameBoard {
 	) {
 		if (x < 0 || x >= GameBoard.COLS || y < 0 || y >= GameBoard.ROWS)
 			return;
-		if (visited[y][x] || this.board[y][x] !== color) return;
+		if (visited[y][x] || board[y][x] !== color) return;
 		visited[y][x] = true;
 		matches.push({ x, y });
 		const dirs = [
@@ -399,22 +512,30 @@ export class GameBoard {
 			{ dx: -1, dy: 0 },
 		];
 		for (let d of dirs)
-			this.findConnected(x + d.dx, y + d.dy, color, visited, matches);
+			this.findConnectedInBoard(
+				board,
+				x + d.dx,
+				y + d.dy,
+				color,
+				visited,
+				matches
+			);
 	}
 
-	private applyGravity() {
+	private applyGravity(board: number[][]) {
 		for (let c = 0; c < GameBoard.COLS; c++) {
 			let validBlocks: number[] = [];
 			for (let r = GameBoard.ROWS - 1; r >= 0; r--) {
-				if (this.board[r][c] !== 0) validBlocks.push(this.board[r][c]);
+				if (board[r][c] !== 0) validBlocks.push(board[r][c]);
 			}
-			for (let r = 0; r < GameBoard.ROWS; r++) this.board[r][c] = 0;
+			for (let r = 0; r < GameBoard.ROWS; r++) board[r][c] = 0;
 			for (let i = 0; i < validBlocks.length; i++)
-				this.board[GameBoard.ROWS - 1 - i][c] = validBlocks[i];
+				board[GameBoard.ROWS - 1 - i][c] = validBlocks[i];
 		}
 	}
 
-	public renderBoard() {
+	public renderBoard(renderData?: number[][]) {
+		const targetBoard = renderData || this.board;
 		const boardWidth = GameBoard.COLS * GameBoard.puyoSize;
 		const gap = 50;
 		const totalWidth = 2 * boardWidth + gap;
@@ -433,7 +554,7 @@ export class GameBoard {
 
 		for (let r = 0; r < GameBoard.ROWS; r++) {
 			for (let c = 0; c < GameBoard.COLS; c++) {
-				const colorIdx = this.board[r][c];
+				const colorIdx = targetBoard[r][c];
 				if (colorIdx !== 0) {
 					new g.FilledRect({
 						scene: g.game.scene(),
