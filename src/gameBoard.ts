@@ -1,6 +1,7 @@
 import { FlowEventName } from "./flow/eventName";
 import { FlowManager } from "./flow/flowManager";
 import { addScore_sender, gameOver_sender, nextPuyo_sender } from "./sender";
+import { Helper } from "./helper";
 
 interface ResolveStep {
 	type: "clear" | "drop";
@@ -556,15 +557,14 @@ export class GameBoard {
 			for (let c = 0; c < GameBoard.COLS; c++) {
 				const colorIdx = targetBoard[r][c];
 				if (colorIdx !== 0) {
-					new g.Sprite({
-						scene: g.game.scene(),
-						parent: this.boardNode,
-						src: g.game.scene().asset.getImage(this.getColor(colorIdx)),
-						x: c * GameBoard.puyoSize,
-						y: r * GameBoard.puyoSize,
-						width: GameBoard.puyoSize - 2,
-						height: GameBoard.puyoSize - 2,
-					});
+					const spr = Helper.newSprite(this.getColor(colorIdx));
+					this.boardNode.append(spr);
+					spr.x = c * GameBoard.puyoSize;
+					spr.y = r * GameBoard.puyoSize;
+					const targetSize = GameBoard.puyoSize - 2;
+					spr.scaleX = targetSize / spr.width;
+					spr.scaleY = targetSize / spr.height;
+					spr.modified();
 				}
 			}
 		}
@@ -613,16 +613,16 @@ export class GameBoard {
 			const targetParent = isGhost
 				? this.ghostPuyoNode
 				: this.currentPuyoNode;
-			new g.Sprite({
-				scene: g.game.scene(),
-				parent: targetParent,
-				src: g.game.scene().asset.getImage(assetPath),
-				x: x * GameBoard.puyoSize + (isGhost ? offset : 0),
-				y: y * GameBoard.puyoSize + (isGhost ? offset : 0),
-				width: size,
-				height: size,
-				opacity: isGhost ? 0.5 : 1,
-			});
+
+			const spr = Helper.newSprite(assetPath);
+			targetParent.append(spr);
+			spr.x = x * GameBoard.puyoSize + (isGhost ? offset : 0);
+			spr.y = y * GameBoard.puyoSize + (isGhost ? offset : 0);
+			spr.opacity = isGhost ? 0.5 : 1;
+
+			spr.scaleX = size / spr.width;
+			spr.scaleY = size / spr.height;
+			spr.modified();
 		};
 		if (this.currentPuyo) {
 			let ghostY = this.currentPuyo.y;

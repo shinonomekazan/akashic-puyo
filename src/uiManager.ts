@@ -2,6 +2,7 @@ import { Button, ButtonMargin } from "./button";
 import { GameBoard } from "./gameBoard";
 import { Localization } from "./localization";
 import { SoundManager } from "./soundManager";
+import { Helper } from "./helper";
 
 export class UIManager {
 	public layoutRoot: g.E;
@@ -334,25 +335,26 @@ export class UIManager {
 				hidden: true,
 			});
 
-			const sub = new g.Sprite({
-				scene: this.scene,
-				parent: container,
-				src: this.scene.asset.getImage("/assets/white.png"),
-				x: 0,
-				y: 0,
-				width: GameBoard.puyoSize - 2,
-				height: GameBoard.puyoSize - 2,
-			});
+			// Create Sub Puyo
+			const sub = Helper.newSprite("/assets/white.png");
+			container.append(sub);
+			sub.x = 0;
+			sub.y = 0;
+			// Calculate Scale
+			const targetSize = GameBoard.puyoSize - 2;
+			sub.scaleX = targetSize / sub.width;
+			sub.scaleY = targetSize / sub.height;
+			sub.modified();
 
-			const main = new g.Sprite({
-				scene: this.scene,
-				parent: container,
-				src: this.scene.asset.getImage("/assets/white.png"),
-				x: 0,
-				y: GameBoard.puyoSize,
-				width: GameBoard.puyoSize - 2,
-				height: GameBoard.puyoSize - 2,
-			});
+			// Create Main Puyo
+			const main = Helper.newSprite("/assets/white.png");
+			container.append(main);
+			main.x = 0;
+			main.y = GameBoard.puyoSize;
+			// Calculate Scale
+			main.scaleX = targetSize / main.width;
+			main.scaleY = targetSize / main.height;
+			main.modified();
 
 			this.nextPuyoContainers[i] = container;
 			this.nextPuyoSubNodes[i] = sub;
@@ -501,15 +503,27 @@ export class UIManager {
 			this.nextPuyoMainNodes[playerIdx] &&
 			this.nextPuyoSubNodes[playerIdx]
 		) {
-			const assetMain = GameBoard.getAssetPath(colorMain);
-			this.nextPuyoMainNodes[playerIdx].src = this.scene.asset.getImage(assetMain);
-			this.nextPuyoMainNodes[playerIdx].invalidate();
-			this.nextPuyoMainNodes[playerIdx].modified();
+			const targetSize = GameBoard.puyoSize - 2;
 
+			// Update Main
+			const assetMain = GameBoard.getAssetPath(colorMain);
+			const imgMain = this.scene.asset.getImage(assetMain);
+			const mainSprite = this.nextPuyoMainNodes[playerIdx];
+			mainSprite.src = imgMain;
+			mainSprite.scaleX = targetSize / imgMain.width;
+			mainSprite.scaleY = targetSize / imgMain.height;
+			mainSprite.invalidate();
+			mainSprite.modified();
+
+			// Update Sub
 			const assetSub = GameBoard.getAssetPath(colorSub);
-			this.nextPuyoSubNodes[playerIdx].src = this.scene.asset.getImage(assetSub);
-			this.nextPuyoSubNodes[playerIdx].invalidate();
-			this.nextPuyoSubNodes[playerIdx].modified();
+			const imgSub = this.scene.asset.getImage(assetSub);
+			const subSprite = this.nextPuyoSubNodes[playerIdx];
+			subSprite.src = imgSub;
+			subSprite.scaleX = targetSize / imgSub.width;
+			subSprite.scaleY = targetSize / imgSub.height;
+			subSprite.invalidate();
+			subSprite.modified();
 
 			if (this.nextPuyoContainers[playerIdx]) {
 				this.nextPuyoContainers[playerIdx].show();
