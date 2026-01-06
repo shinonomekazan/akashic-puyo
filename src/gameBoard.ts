@@ -255,28 +255,29 @@ export class GameBoard {
 		});
 	}
 
-	public spawnPuyo() {
+	public generateRandomColors(): { colorMain: number; colorSub: number } {
+		const main = Math.floor(this.rng.generate() * 2) + 1;
+		const sub = Math.floor(this.rng.generate() * 2) + 1;
+		return { colorMain: main, colorSub: sub };
+	}
+
+	public spawnPuyo(
+		nextColors: { colorMain: number; colorSub: number },
+		currentColors: { colorMain: number; colorSub: number }
+	) {
 		if (this.isAnimating) {
 			return;
 		}
 
-		if (!this.nextPuyo) {
-			this.nextPuyo = {
-				colorMain: Math.floor(this.rng.generate() * 2) + 1,
-				colorSub: Math.floor(this.rng.generate() * 2) + 1,
-			};
-			this.rngIterationCount += 2;
-		}
-
-		const nextPuyo = {
+		this.currentPuyo = {
 			x: 2,
 			y: 1,
-			colorMain: this.nextPuyo.colorMain,
-			colorSub: this.nextPuyo.colorSub,
+			colorMain: currentColors.colorMain,
+			colorSub: currentColors.colorSub,
 			rot: 0,
 		};
 
-		if (!this.isValid(nextPuyo.x, nextPuyo.y, nextPuyo.rot)) {
+		if (!this.isValid(this.currentPuyo.x, this.currentPuyo.y, this.currentPuyo.rot)) {
 			this.flowManager.fireAsync(
 				FlowEventName.GameOver,
 				new gameOver_sender(this.playerIndex, "blocked")
@@ -284,12 +285,11 @@ export class GameBoard {
 			return;
 		}
 
-		this.currentPuyo = nextPuyo;
-
 		this.nextPuyo = {
-			colorMain: Math.floor(this.rng.generate() * 2) + 1,
-			colorSub: Math.floor(this.rng.generate() * 2) + 1,
+			colorMain: nextColors.colorMain,
+			colorSub: nextColors.colorSub
 		};
+
 		this.rngIterationCount += 2;
 
 		this.flowManager.fireAsync(

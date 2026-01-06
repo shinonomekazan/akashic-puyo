@@ -80,7 +80,8 @@ export class MainScene extends g.Scene {
 		this.uiManager.onLobbyClick.add(() => {
 			const myPlayer = this.players[g.game.selfId];
 			if (!myPlayer) {
-				this.syncFramework.dispatch("join", {});
+				const seed = Math.floor(g.game.random.generate() * 1000000);
+				this.syncFramework.dispatch("join", { seed: seed });
 			} else if (!myPlayer.ready) {
 				this.syncFramework.dispatch("ready", {});
 			}
@@ -139,7 +140,28 @@ export class MainScene extends g.Scene {
 				}
 
 				if (!board.currentPuyo) {
-					this.syncFramework.dispatch("spawn", { pIdx: player.pIdx });
+					// HOST LOGIC:
+					// We must generate colors using the BOARD's RNG to ensure it's tied to the synced seed.
+					// 1. Determine Current Colors
+					let currentColors = null;
+					if (board.nextPuyo) {
+						currentColors = {
+							colorMain: board.nextPuyo.colorMain,
+							colorSub: board.nextPuyo.colorSub
+						};
+					} else {
+						// First turn: generate current colors
+						currentColors = board.generateRandomColors();
+					}
+
+					// 2. Generate NEW Next Colors
+					const nextColors = board.generateRandomColors();
+
+					this.syncFramework.dispatch("spawn", {
+						pIdx: player.pIdx,
+						nextColors: nextColors,
+						currentColors: currentColors
+					});
 					return;
 				}
 
@@ -159,15 +181,16 @@ export class MainScene extends g.Scene {
 	private registerSyncActions() {
 		this.syncFramework.register(
 			"join",
-			(state, _, senderId) => {
+			(state, payload, senderId) => {
 				if (!state.players[senderId] && Object.keys(state.players).length < 2) {
 					const pIdx = Object.keys(state.players).length;
-					state.players[senderId] = { id: senderId, pIdx: pIdx, ready: false };
+					const seed = payload.seed;
+					state.players[senderId] = { id: senderId, pIdx: pIdx, ready: false, rngSeed: seed };
 				}
 			},
 			(_, __, state) => {
 				for (const id in state.players) {
-					this.createPlayer(id);
+					this.createPlayer(id, state.players[id].rngSeed);
 					if (state.players[id].ready && this.players[id]) {
 						this.players[id].ready = true;
 					}
@@ -241,7 +264,7 @@ export class MainScene extends g.Scene {
 			(payload, isLocal, state) => {
 				const board = GameBoard.getByIndex(payload.pIdx);
 				if (board) {
-					board.spawnPuyo();
+					board.spawnPuyo(payload.nextColors, payload.currentColors);
 				}
 			}
 		);
@@ -484,7 +507,7 @@ export class MainScene extends g.Scene {
 		});
 	}
 
-	private createPlayer(id: string) {
+	private createPlayer(id: string, rngSeed?: number) {
 		if (this.players[id]) return this.players[id];
 
 		const currentCount = Object.keys(this.players).length;
@@ -495,7 +518,8 @@ export class MainScene extends g.Scene {
 			currentCount,
 			this,
 			this.uiManager.gameLayer,
-			this.flowManager
+			this.flowManager,
+			rngSeed
 		);
 		const player = new Player(id, currentCount, this.flowManager);
 		this.players[id] = player;
