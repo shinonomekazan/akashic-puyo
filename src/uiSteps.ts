@@ -6,6 +6,7 @@ import {
 	gameOver_sender,
 	getSender,
 	nextPuyo_sender,
+	selectMode_sender,
 } from "./sender";
 import { GameBoard } from "./gameBoard";
 
@@ -16,6 +17,16 @@ export class UIStep extends BaseStep {
 
 	public async onStep(eventName: FlowEventName): Promise<void> {
 		switch (eventName) {
+			case FlowEventName.SelectMode:
+				const scene = g.game.scene() as any;
+				let isHost = false;
+				if (scene.syncFramework && scene.syncFramework.state && scene.syncFramework.state.players) {
+					const p = scene.syncFramework.state.players[g.game.selfId];
+					if (p && p.pIdx === 0) isHost = true;
+					if (!p && Object.keys(scene.syncFramework.state.players).length === 0) isHost = true;
+				}
+				this.uiManager.showModeSelection(isHost);
+				break;
 			case FlowEventName.UpdateLobbyUI:
 				const sender = getSender(eventName) as {
 					textKey: string;
@@ -28,15 +39,16 @@ export class UIStep extends BaseStep {
 						sender.enableButton,
 						sender.showWaitSprite
 					);
-				} else {
-					this.uiManager.updateLobbyUI("wait_p2", false, false);
 				}
 				break;
 
 			case FlowEventName.HideLobbyUI:
 			case FlowEventName.GameLoad:
 				this.uiManager.hideLobbyUI();
+				this.uiManager.hideModeSelection();
+				this.uiManager.hidePvPLobby();
 				this.uiManager.showScoreUI();
+				this.uiManager.refreshScoreLayout();
 				break;
 
 			case FlowEventName.UpdateNextPuyo:
@@ -63,8 +75,59 @@ export class UIStep extends BaseStep {
 				break;
 
 			case FlowEventName.GameOver:
-				console.log("game over");
+				const currentScene = g.game.scene() as any;
+				const syncState = currentScene.syncFramework ? currentScene.syncFramework.state : null;
+
+				// Identify who lost based on Sender or State
 				const goSender = getSender(eventName) as gameOver_sender;
+
+				// Logic:
+				// If I am in Solo/NPC mode:
+				//   Only show Game Over if I (or my bot) am the one who lost.
+				//   If sender indicates someone else lost, IGNORE.
+
+				let loserId: string = null;
+				// Map index to ID using local board instances
+				if (goSender) {
+					for (let id in GameBoard.instances) {
+						if (GameBoard.instances[id].playerIndex === goSender.loserPlayerIdx) {
+							loserId = id;
+							break;
+						}
+					}
+				} else if (syncState) {
+					// Fallback if triggered without sender (rare in new logic)
+					// check players with status GAMEOVER
+					for (let id in syncState.players) {
+						if (syncState.players[id].status === "GAMEOVER") {
+							// Just pick one for display purpose if multiple
+							loserId = id;
+							break;
+						}
+					}
+				}
+
+				if (!loserId) return; // Should not happen
+
+				// Check relevancy
+				const myP = syncState ? syncState.players[g.game.selfId] : null;
+				if (myP) {
+					if (myP.mode === "SOLO" || myP.mode === "NPC") {
+						// Only care if I lost or my bot lost
+						if (loserId !== g.game.selfId && loserId !== "BOT_" + g.game.selfId) {
+							return;
+						}
+					}
+					// If PVP, we generally want to see the result
+				}
+
+				let loserPlayerIdx = -1;
+				let reason = goSender ? goSender.reason : "";
+
+				if (GameBoard.instances[loserId]) {
+					loserPlayerIdx = GameBoard.instances[loserId].playerIndex;
+				}
+
 				let myIdx = -1;
 				const myBoard = GameBoard.get(g.game.selfId);
 				if (myBoard) {
@@ -74,18 +137,20 @@ export class UIStep extends BaseStep {
 				let msgKey = "";
 				let args: any[] = [];
 
-				if (goSender.reason === "disconnect") {
-					if (myIdx !== -1 && goSender.loserPlayerIdx === myIdx) {
+				if (reason === "disconnect") {
+					if (myIdx !== -1 && loserPlayerIdx === myIdx) {
 						msgKey = "you_lose";
 					} else {
 						msgKey = "opp_left_win";
 					}
+				} else if (reason === "solo_end") {
+					msgKey = "p_lose";
 				} else {
 					if (myIdx === -1) {
 						msgKey = "p_lose";
-						args = [goSender.loserPlayerIdx + 1];
+						args = [loserPlayerIdx + 1];
 					} else {
-						if (goSender.loserPlayerIdx === myIdx) {
+						if (loserPlayerIdx === myIdx) {
 							msgKey = "you_lose";
 						} else {
 							msgKey = "you_win";

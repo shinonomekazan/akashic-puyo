@@ -10,4 +10,5 @@ export enum FlowEventName {
 	GameOver,
 	ResetGame,
 	UpdateNextPuyo,
+	SelectMode,
 }

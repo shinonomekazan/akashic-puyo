@@ -5,27 +5,31 @@ import { move_sender, rotate_sender } from "./sender";
 
 export class Player {
 	public id: string;
-	public pIdx: number;
+	public pIdx: number; // This acts as Visual Index (0 for left/solo, 1 for right)
 	public ready: boolean;
+	public isBot: boolean;
 	private flowManager: FlowManager;
 
-	constructor(id: string, pIdx: number, flowManager: FlowManager) {
+	constructor(id: string, pIdx: number, flowManager: FlowManager, isBot: boolean = false) {
 		this.id = id;
 		this.pIdx = pIdx;
 		this.ready = false;
 		this.flowManager = flowManager;
+		this.isBot = isBot;
 	}
 
 	public getSnapshot() {
 		return {
 			id: this.id,
 			pIdx: this.pIdx,
-			ready: this.ready
+			ready: this.ready,
+			isBot: this.isBot
 		};
 	}
 
 	public initFromSnapshot(data: any) {
 		this.ready = data.ready;
+		this.isBot = data.isBot;
 	}
 
 	public handleInput(key: string, dropTimerReset: () => void) {

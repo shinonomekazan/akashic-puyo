@@ -28,9 +28,8 @@ export class GameStateStep extends BaseStep {
 				const sender = getSender(eventName) as gameOver_sender;
 				if (sender) {
 					this.mainScene.setGameOver(sender.loserPlayerIdx, sender.reason);
-				} else {
-					this.mainScene.setGameStarted(false);
 				}
+				// Removed invalid call to setGameStarted(false)
 				break;
 			case FlowEventName.ResetGame:
 				for (let id in GameBoard.instances) {

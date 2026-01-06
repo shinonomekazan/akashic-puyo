@@ -14,6 +14,8 @@ export class GameBoard {
 	public static readonly COLS = 6;
 	public static puyoSize: number = 30;
 	public static instances: { [id: string]: GameBoard } = {};
+	// Static on the client side. Since P1 and P2 are different clients, this works for "View" logic.
+	public static totalBoardsInGame: number = 2;
 
 	public board: number[][] = [];
 	public currentPuyo: {
@@ -78,6 +80,12 @@ export class GameBoard {
 		flowManager: FlowManager,
 		forceSeed?: number
 	): GameBoard {
+		// Cleanup existing board for this ID to prevent duplicates/ghosting
+		if (this.instances[id]) {
+			this.instances[id].destroy();
+			delete this.instances[id];
+		}
+
 		let rngSeed: number;
 		if (forceSeed !== undefined) {
 			rngSeed = forceSeed;
@@ -91,6 +99,18 @@ export class GameBoard {
 		this.instances[id] = state;
 		state.init(scene, parent);
 		return state;
+	}
+
+	public destroy() {
+		if (this.boardNode && !this.boardNode.destroyed()) this.boardNode.destroy();
+		if (this.backgroundNode && !this.backgroundNode.destroyed()) this.backgroundNode.destroy();
+		if (this.ghostPuyoNode && !this.ghostPuyoNode.destroyed()) this.ghostPuyoNode.destroy();
+		if (this.currentPuyoNode && !this.currentPuyoNode.destroyed()) this.currentPuyoNode.destroy();
+
+		this.boardNode = null;
+		this.backgroundNode = null;
+		this.ghostPuyoNode = null;
+		this.currentPuyoNode = null;
 	}
 
 	public static get(id: string): GameBoard {
@@ -146,6 +166,9 @@ export class GameBoard {
 	}
 
 	private getVisualIndex(): number {
+		// If total boards is 1 (Solo), always center (return 0 relative to single layout)
+		if (GameBoard.totalBoardsInGame === 1) return 0;
+
 		let localPlayerIndex = 0;
 		if (GameBoard.instances[g.game.selfId]) {
 			localPlayerIndex = GameBoard.instances[g.game.selfId].playerIndex;
@@ -155,16 +178,26 @@ export class GameBoard {
 
 	public init(scene: g.Scene, parent: g.E) {
 		this.rootParent = parent;
+		this.recalculatePosition(scene);
+	}
 
+	private recalculatePosition(scene: g.Scene) {
 		const boardWidth = GameBoard.COLS * GameBoard.puyoSize;
 		const gap = 50;
-		const totalWidth = 2 * boardWidth + gap;
+		const totalWidth = GameBoard.totalBoardsInGame * boardWidth + (GameBoard.totalBoardsInGame - 1) * gap;
 		const startX = (g.game.width - totalWidth) / 2;
-		const offsetX = startX + this.getVisualIndex() * (boardWidth + gap);
+
+		// If Solo, offset is just startX. If Multi, depends on index.
+		const visualIndex = this.getVisualIndex();
+		const offsetX = startX + visualIndex * (boardWidth + gap);
 
 		this.board = Array.from({ length: GameBoard.ROWS }, () =>
 			Array(GameBoard.COLS).fill(0)
 		);
+
+		if (this.boardNode && !this.boardNode.destroyed()) this.boardNode.destroy();
+		if (this.ghostPuyoNode && !this.ghostPuyoNode.destroyed()) this.ghostPuyoNode.destroy();
+		if (this.currentPuyoNode && !this.currentPuyoNode.destroyed()) this.currentPuyoNode.destroy();
 
 		this.boardNode = new g.E({
 			scene: scene,
@@ -198,8 +231,12 @@ export class GameBoard {
 		this.busyUntil = 0;
 		this.snapshotBoard = null;
 		this.renderBoard();
-		if (this.ghostPuyoNode) this.ghostPuyoNode.destroy();
-		if (this.currentPuyoNode) this.currentPuyoNode.destroy();
+
+		if (this.ghostPuyoNode && !this.ghostPuyoNode.destroyed()) this.ghostPuyoNode.destroy();
+		if (this.currentPuyoNode && !this.currentPuyoNode.destroyed()) this.currentPuyoNode.destroy();
+
+		// Re-create nodes to be safe and clean
+		this.updatePuyoView();
 
 		if (this.backgroundNode && !this.backgroundNode.destroyed()) {
 			this.backgroundNode.destroy();
@@ -235,11 +272,11 @@ export class GameBoard {
 		const scene = g.game.scene();
 		const boardWidth = GameBoard.COLS * GameBoard.puyoSize;
 		const gap = 50;
-		const totalWidth = 2 * boardWidth + gap;
+		const totalWidth = GameBoard.totalBoardsInGame * boardWidth + (GameBoard.totalBoardsInGame - 1) * gap;
 		const startX = (g.game.width - totalWidth) / 2;
 		const offsetX = startX + this.getVisualIndex() * (boardWidth + gap);
 
-		if (this.backgroundNode && !this.backgroundNode.destroyed()) return;
+		if (this.backgroundNode && !this.backgroundNode.destroyed()) this.backgroundNode.destroy();
 
 		this.backgroundNode = new g.FilledRect({
 			scene: scene,
@@ -254,6 +291,8 @@ export class GameBoard {
 				this.playerIndex % GameBoard.colorBackground.length
 				],
 		});
+		// Ensure background is behind everything
+		Helper.insertBefore(this.rootParent.children[0], this.backgroundNode);
 	}
 
 	public generateRandomColors(): { colorMain: number; colorSub: number } {
@@ -269,6 +308,9 @@ export class GameBoard {
 		if (this.isAnimating) {
 			return;
 		}
+
+		// Double check to avoid ghost puyos if spawn is called rapidly
+		if (this.currentPuyo) return;
 
 		this.currentPuyo = {
 			x: 2,
@@ -539,7 +581,7 @@ export class GameBoard {
 		const targetBoard = renderData || this.board;
 		const boardWidth = GameBoard.COLS * GameBoard.puyoSize;
 		const gap = 50;
-		const totalWidth = 2 * boardWidth + gap;
+		const totalWidth = GameBoard.totalBoardsInGame * boardWidth + (GameBoard.totalBoardsInGame - 1) * gap;
 		const startX = (g.game.width - totalWidth) / 2;
 		const offsetX = startX + this.getVisualIndex() * (boardWidth + gap);
 
@@ -570,11 +612,17 @@ export class GameBoard {
 		}
 		if (this.ghostPuyoNode && !this.ghostPuyoNode.destroyed()) {
 			this.ghostPuyoNode.remove();
+			this.ghostPuyoNode.x = offsetX;
+			this.ghostPuyoNode.y = 50;
+			this.ghostPuyoNode.modified();
 			if (this.boardNode.parent)
 				this.boardNode.parent.append(this.ghostPuyoNode);
 		}
 		if (this.currentPuyoNode && !this.currentPuyoNode.destroyed()) {
 			this.currentPuyoNode.remove();
+			this.currentPuyoNode.x = offsetX;
+			this.currentPuyoNode.y = 50;
+			this.currentPuyoNode.modified();
 			if (this.boardNode.parent)
 				this.boardNode.parent.append(this.currentPuyoNode);
 		}

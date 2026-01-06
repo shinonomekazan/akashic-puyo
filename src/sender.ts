@@ -64,3 +64,10 @@ export class gameOver_sender {
 	loserPlayerIdx: number;
 	reason: string;
 }
+
+export class selectMode_sender {
+	constructor(mode: "SOLO" | "NPC" | "PVP") {
+		this.mode = mode;
+	}
+	mode: "SOLO" | "NPC" | "PVP";
+}

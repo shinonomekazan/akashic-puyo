@@ -3,6 +3,7 @@ import { GameBoard } from "./gameBoard";
 import { Localization } from "./localization";
 import { SoundManager } from "./soundManager";
 import { Helper } from "./helper";
+import { selectMode_sender } from "./sender";
 
 export class UIManager {
 	public layoutRoot: g.E;
@@ -12,6 +13,7 @@ export class UIManager {
 	public onLobbyClick: g.Trigger<void> = new g.Trigger();
 	public onRestartClick: g.Trigger<void> = new g.Trigger();
 	public onControlClick: g.Trigger<string> = new g.Trigger();
+	public onSelectMode: g.Trigger<"SOLO" | "NPC" | "PVP"> = new g.Trigger();
 
 	private scene: g.Scene;
 	private lobbyContainer: g.E;
@@ -38,6 +40,12 @@ export class UIManager {
 	private soundLabel: g.Label;
 	private soundManager: SoundManager;
 
+	private modeSelectionContainer: g.E;
+	private modeButtons: { [mode: string]: { btn: g.FilledRect, lbl: g.Label } } = {};
+
+	private pvpLobbyContainer: g.E;
+	private pvpSlots: { bg: g.FilledRect, label: g.Label, button: g.FilledRect, btnLabel: g.Label }[] = [];
+
 	constructor(scene: g.Scene, soundManager?: SoundManager) {
 		this.scene = scene;
 		this.soundManager = soundManager;
@@ -52,6 +60,8 @@ export class UIManager {
 		this.createGameOverUI();
 		this.createLoadingUI();
 		this.createUIController();
+		this.createModeSelectionUI();
+		this.createPvPLobbyUI();
 
 		if (this.soundManager) {
 			this.createSoundButton();
@@ -231,6 +241,7 @@ export class UIManager {
 			width: width,
 			height: height,
 			touchable: true,
+			hidden: true
 		});
 
 		this.lobbyBg = new g.FilledRect({
@@ -289,6 +300,198 @@ export class UIManager {
 			this.onLobbyClick.fire();
 		});
 	}
+
+	private createModeSelectionUI() {
+		this.modeSelectionContainer = new g.E({
+			scene: this.scene,
+			parent: this.uiLayer,
+			width: g.game.width,
+			height: g.game.height,
+			hidden: true
+		});
+
+		new g.FilledRect({
+			scene: this.scene,
+			parent: this.modeSelectionContainer,
+			width: g.game.width,
+			height: g.game.height,
+			cssColor: "black",
+			opacity: 0.8
+		});
+
+		const title = new g.Label({
+			scene: this.scene,
+			parent: this.modeSelectionContainer,
+			font: globalThis.font,
+			text: "Select Game Mode",
+			fontSize: 40,
+			textColor: "white",
+			width: g.game.width,
+			textAlign: "center",
+			y: 100
+		});
+
+		const modes: ("SOLO" | "NPC" | "PVP")[] = ["SOLO", "NPC", "PVP"];
+		modes.forEach((mode, i) => {
+			const btn = new g.FilledRect({
+				scene: this.scene,
+				parent: this.modeSelectionContainer,
+				x: g.game.width / 2 - 150,
+				y: 200 + i * 120,
+				width: 300,
+				height: 80,
+				cssColor: "white",
+				touchable: true
+			});
+
+			const lbl = new g.Label({
+				scene: this.scene,
+				parent: btn,
+				font: globalThis.font,
+				text: mode,
+				fontSize: 35,
+				textColor: "black",
+				width: 300,
+				textAlign: "center",
+				y: 20
+			});
+
+			this.modeButtons[mode] = { btn, lbl };
+
+			btn.onPointDown.add(() => {
+				this.onSelectMode.fire(mode);
+			});
+		});
+	}
+
+	private createPvPLobbyUI() {
+		this.pvpLobbyContainer = new g.E({
+			scene: this.scene,
+			parent: this.uiLayer,
+			width: g.game.width,
+			height: g.game.height,
+			hidden: true
+		});
+
+		new g.FilledRect({
+			scene: this.scene,
+			parent: this.pvpLobbyContainer,
+			width: g.game.width,
+			height: g.game.height,
+			cssColor: "black",
+			opacity: 0.6
+		});
+
+		const labels = ["Player 1 (You)", "Player 2"];
+		const slotWidth = 300;
+		const gap = 100;
+		const startX = (g.game.width - (slotWidth * 2 + gap)) / 2;
+
+		for (let i = 0; i < 2; i++) {
+			const x = startX + i * (slotWidth + gap);
+			const bg = new g.FilledRect({
+				scene: this.scene,
+				parent: this.pvpLobbyContainer,
+				x: x,
+				y: g.game.height / 2 - 150,
+				width: slotWidth,
+				height: 300,
+				cssColor: "#333",
+				opacity: 0.8
+			});
+
+			const lbl = new g.Label({
+				scene: this.scene,
+				parent: bg,
+				font: globalThis.font,
+				text: labels[i],
+				fontSize: 25,
+				textColor: "white",
+				width: slotWidth,
+				textAlign: "center",
+				y: 20
+			});
+
+			const btn = new g.FilledRect({
+				scene: this.scene,
+				parent: bg,
+				x: 50,
+				y: 200,
+				width: 200,
+				height: 60,
+				cssColor: "gray",
+				touchable: false
+			});
+
+			const btnLbl = new g.Label({
+				scene: this.scene,
+				parent: btn,
+				font: globalThis.font,
+				text: "Click Ready",
+				fontSize: 20,
+				textColor: "black",
+				width: 200,
+				textAlign: "center",
+				y: 15
+			});
+
+			this.pvpSlots.push({ bg, label: lbl, button: btn, btnLabel: btnLbl });
+
+			btn.onPointDown.add(() => {
+				if (this.onLobbyClick) {
+					this.onLobbyClick.fire();
+				}
+			});
+		}
+	}
+
+	public showModeSelection(isHost: boolean) {
+		this.modeSelectionContainer.show();
+
+		// Enable all modes for everyone
+		for (const mode in this.modeButtons) {
+			const { btn, lbl } = this.modeButtons[mode];
+
+			btn.touchable = true;
+			btn.cssColor = "white";
+			lbl.text = mode;
+
+			lbl.invalidate();
+			btn.modified();
+		}
+	}
+
+	public hideModeSelection() {
+		this.modeSelectionContainer.hide();
+	}
+
+	public showPvPLobby(myPIdx: number, p1Ready: boolean, p2Ready: boolean) {
+		this.pvpLobbyContainer.show();
+		this.pvpSlots.forEach((slot, i) => {
+			const isMe = (i === myPIdx);
+			const isReady = (i === 0 ? p1Ready : p2Ready);
+
+			if (isMe) {
+				slot.label.text = "You";
+				slot.button.touchable = !isReady;
+				slot.button.cssColor = isReady ? "green" : "white";
+			} else {
+				slot.label.text = i === 0 ? "Player 1" : "Player 2";
+				slot.button.touchable = false;
+				slot.button.cssColor = isReady ? "green" : "gray";
+			}
+
+			slot.btnLabel.text = isReady ? "READY!" : "Click Ready";
+			slot.label.invalidate();
+			slot.btnLabel.invalidate();
+			slot.button.modified();
+		});
+	}
+
+	public hidePvPLobby() {
+		this.pvpLobbyContainer.hide();
+	}
+
 
 	public createScoreUI() {
 		const boardWidth = GameBoard.COLS * GameBoard.puyoSize;
@@ -363,25 +566,35 @@ export class UIManager {
 	}
 
 	public refreshScoreLayout() {
+		const totalBoards = GameBoard.totalBoardsInGame;
+		const boardWidth = GameBoard.COLS * GameBoard.puyoSize;
+		const gap = 50;
+		const totalWidth = totalBoards * boardWidth + (totalBoards - 1) * gap;
+		const startX = (g.game.width - totalWidth) / 2;
+
 		let localPIndex = 0;
 		const myBoard = GameBoard.get(g.game.selfId);
 		if (myBoard) localPIndex = myBoard.playerIndex;
 
-		const boardWidth = GameBoard.COLS * GameBoard.puyoSize;
-		const gap = 50;
-		const totalWidth = 2 * boardWidth + gap;
-		const startX = (g.game.width - totalWidth) / 2;
-
 		for (let i = 0; i < 2; i++) {
-			const visualIndex = (i - localPIndex + 2) % 2;
+			let visualIndex = i;
+			if (totalBoards === 2) {
+				visualIndex = (i - localPIndex + 2) % 2;
+			} else {
+				visualIndex = 0;
+			}
+
 			const offsetX = startX + visualIndex * (boardWidth + gap);
+
 			if (this.scoreLabels[i]) {
 				this.scoreLabels[i].x = offsetX;
 				this.scoreLabels[i].modified();
+				if (i >= totalBoards) this.scoreLabels[i].hide();
 			}
 			if (this.nextPuyoContainers[i]) {
 				this.nextPuyoContainers[i].x = offsetX + boardWidth + 5;
 				this.nextPuyoContainers[i].modified();
+				if (i >= totalBoards) this.nextPuyoContainers[i].hide();
 			}
 		}
 	}
@@ -533,8 +746,9 @@ export class UIManager {
 
 	public showScoreUI() {
 		this.controllerLayer.show();
-		for (let key in this.scoreLabels) {
-			this.scoreLabels[key].show();
+		const totalBoards = GameBoard.totalBoardsInGame;
+		for (let i = 0; i < totalBoards; i++) {
+			if (this.scoreLabels[i]) this.scoreLabels[i].show();
 		}
 	}
 
