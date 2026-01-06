@@ -49,6 +49,14 @@ export class UIStep extends BaseStep {
 				this.uiManager.hidePvPLobby();
 				this.uiManager.showScoreUI();
 				this.uiManager.refreshScoreLayout();
+
+				const sceneLoad = g.game.scene() as any;
+				if (sceneLoad.syncFramework && sceneLoad.syncFramework.state && sceneLoad.syncFramework.state.players) {
+					const myP = sceneLoad.syncFramework.state.players[g.game.selfId];
+					if (myP) {
+						this.uiManager.updateModeLabel(myP.mode);
+					}
+				}
 				break;
 
 			case FlowEventName.UpdateNextPuyo:
@@ -163,6 +171,7 @@ export class UIStep extends BaseStep {
 			case FlowEventName.ResetGame:
 				this.uiManager.hideGameOverUI();
 				this.uiManager.hideScoreUI();
+				this.uiManager.updateModeLabel("NONE");
 				for (let id in GameBoard.instances) {
 					this.uiManager.updateScore(
 						GameBoard.get(id).playerIndex,

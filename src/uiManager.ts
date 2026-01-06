@@ -46,10 +46,14 @@ export class UIManager {
 	private pvpLobbyContainer: g.E;
 	private pvpSlots: { bg: g.FilledRect, label: g.Label, button: g.FilledRect, btnLabel: g.Label }[] = [];
 
+	private modeLabel: g.Label;
+
 	constructor(scene: g.Scene, soundManager?: SoundManager) {
 		this.scene = scene;
 		this.soundManager = soundManager;
 		this.layoutRoot = new g.E({ scene: scene, parent: scene });
+		let bg = Helper.newSprite("/assets/background.png");
+		this.layoutRoot.append(bg)
 
 		this.gameLayer = new g.E({ scene: scene, parent: this.layoutRoot });
 		this.uiLayer = new g.E({ scene: scene, parent: this.layoutRoot });
@@ -62,7 +66,7 @@ export class UIManager {
 		this.createUIController();
 		this.createModeSelectionUI();
 		this.createPvPLobbyUI();
-
+		this.createModeLabel();
 		if (this.soundManager) {
 			this.createSoundButton();
 		}
@@ -227,6 +231,29 @@ export class UIManager {
 		}
 		this.soundLabel.invalidate();
 		this.soundButton.modified();
+	}
+
+	private createModeLabel() {
+		this.modeLabel = new g.Label({
+			scene: this.scene,
+			parent: this.uiLayer,
+			font: globalThis.font,
+			text: "",
+			fontSize: 16,
+			textColor: "black",
+			x: 10,
+			y: 10,
+			touchable: false
+		});
+	}
+
+	public updateModeLabel(mode: string) {
+		if (mode === "NONE") {
+			this.modeLabel.text = "";
+		} else {
+			this.modeLabel.text = "MODE: " + mode;
+		}
+		this.modeLabel.invalidate();
 	}
 
 	private createLobbyUI() {

@@ -283,7 +283,7 @@ export class GameBoard {
 			parent: this.rootParent,
 			x: offsetX,
 			y: 50,
-			opacity: 0.1,
+			opacity: 0.45,
 			width: GameBoard.puyoSize * GameBoard.COLS,
 			height: GameBoard.puyoSize * GameBoard.ROWS,
 			cssColor:
