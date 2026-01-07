@@ -43,13 +43,11 @@ export class MainScene extends g.Scene {
 	private waitingForSync: boolean = false;
 
 	private onKeyDownHandler: (ev: any) => void;
-	private initialSnapshot: any;
 	private localMode: GameMode = "NONE";
 
-	constructor(param: g.SceneParameterObject, snapshot?: any) {
+	constructor(param: g.SceneParameterObject) {
 		param.assetPaths = assetPaths;
 		super(param);
-		this.initialSnapshot = snapshot;
 		this.flowManager = new FlowManager();
 
 		this.onKeyDownHandler = (ev: any) => {
@@ -114,14 +112,11 @@ export class MainScene extends g.Scene {
 			}
 		});
 
-		this.syncFramework.init(this, this.initialSnapshot, (state) => {
-			this.restoreGame(state);
+		this.syncFramework.init(this, (state) => {
 		});
 
-		if (!this.initialSnapshot) {
-			const seed = Math.floor(g.game.random.generate() * 1000000);
-			this.syncFramework.dispatch("join", { seed: seed });
-		}
+		const seed = Math.floor(g.game.random.generate() * 1000000);
+		this.syncFramework.dispatch("join", { seed: seed });
 
 		if (typeof window !== "undefined") {
 			window.addEventListener("keydown", this.onKeyDownHandler);
@@ -388,8 +383,6 @@ export class MainScene extends g.Scene {
 				}
 			},
 			(payload, isLocal, state) => {
-				this.saveGameSnapshot();
-
 				const myP = state.players[g.game.selfId];
 				if (!myP) return;
 
@@ -547,12 +540,6 @@ export class MainScene extends g.Scene {
 		}
 	}
 
-	public saveGameSnapshot() {
-		if (!this.syncFramework) return;
-		this.syncStateFromGame();
-		g.game.saveSnapshot(this.syncFramework.state);
-	}
-
 	public setGameOver(loserPlayerIdx: number, reason: string) {
 		const myP = this.syncFramework?.state.players[g.game.selfId];
 
@@ -571,57 +558,6 @@ export class MainScene extends g.Scene {
 				loserIdx: loserId,
 				reason: reason
 			});
-		}
-	}
-
-	private restoreGame(state: GameState) {
-		if (!state) return;
-
-		const myP = state.players[g.game.selfId];
-		if (!myP) return;
-
-		this.localMode = myP.mode;
-		if (this.localMode === "SOLO") GameBoard.totalBoardsInGame = 1;
-		else GameBoard.totalBoardsInGame = 2;
-
-		this.uiManager.hideLobbyUI();
-		this.uiManager.hideModeSelection();
-		this.uiManager.hidePvPLobby();
-
-		if (myP.status === "GAMEOVER") {
-			this.uiManager.showScoreUI();
-			this.uiManager.refreshScoreLayout();
-			this.flowManager.fireAsync(FlowEventName.GameOver, new selectMode_sender(this.localMode as any));
-			return;
-		}
-
-		if (myP.status === "PLAYING") {
-			let relevantIds: string[] = [];
-			if (this.localMode === "SOLO") {
-				relevantIds = [g.game.selfId];
-			} else if (this.localMode === "NPC") {
-				relevantIds = [g.game.selfId, "BOT_" + g.game.selfId];
-			} else if (this.localMode === "PVP") {
-				relevantIds = Object.keys(state.players).filter(id => state.players[id].mode === "PVP");
-			}
-
-			this.players = {};
-			relevantIds.forEach((id, index) => {
-				const pData = state.players[id];
-				this.createPlayer(id, index, pData.rngSeed, pData.isBot);
-			});
-
-			relevantIds.forEach((id) => {
-				if (state.boards[id]) {
-					GameBoard.get(id).initFromSnapshot(state.boards[id]);
-				}
-			});
-
-			this.uiManager.showScoreUI();
-			this.uiManager.refreshScoreLayout();
-			FlowManager.eventName = FlowEventName.Move;
-		} else {
-			this.refreshLobbyState();
 		}
 	}
 

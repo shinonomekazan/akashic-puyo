@@ -50,11 +50,6 @@ export class nextPuyo_sender extends client_sender {
 	colorMain: number;
 	colorSub: number;
 }
-export class gameLoad_sender {
-	//layout: layout;
-	//buttonLoadSheet: buttonAndSheet[] = [];
-	//triggerLoadSheet: g.Trigger<string> = new g.Trigger<string>()
-}
 
 export class gameOver_sender {
 	constructor(loserPlayerIdx: number, reason: string) {

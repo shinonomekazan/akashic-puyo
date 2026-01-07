@@ -29,16 +29,8 @@ export class SyncFramework<TState> {
 		};
 	}
 
-	init(scene: g.Scene, snapshot: any, onSyncViewCallback: (state: TState) => void): void {
+	init(scene: g.Scene, onSyncViewCallback: (state: TState) => void): void {
 		this.onSyncView = onSyncViewCallback;
-
-		if (snapshot) {
-			this.state = snapshot as TState;
-			if (this.onSyncView) {
-				this.onSyncView(this.state);
-			}
-		}
-
 		scene.onMessage.add(this._handleMessage, this);
 	}
 

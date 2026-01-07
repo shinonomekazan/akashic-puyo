@@ -29,7 +29,6 @@ export class GameStateStep extends BaseStep {
 				if (sender) {
 					this.mainScene.setGameOver(sender.loserPlayerIdx, sender.reason);
 				}
-				// Removed invalid call to setGameStarted(false)
 				break;
 			case FlowEventName.ResetGame:
 				for (let id in GameBoard.instances) {
@@ -38,7 +37,6 @@ export class GameStateStep extends BaseStep {
 				}
 				break;
 			case FlowEventName.UpdateNextPuyo:
-				this.mainScene.saveGameSnapshot();
 				break;
 		}
 	}

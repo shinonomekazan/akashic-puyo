@@ -28,7 +28,7 @@ async function main(param: g.GameMainParameterObject): Promise<void> {
 	let mainScene = new MainScene({
 		game: g.game,
 		name: "main scene",
-	}, param.snapshot);
+	});
 
 	g.game.pushScene(mainScene);
 }
