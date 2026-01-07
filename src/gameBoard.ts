@@ -45,9 +45,10 @@ export class GameBoard {
 
 	private rootParent: g.E;
 	private backgroundNode: g.FilledRect = null;
+	private readonly yLocation: number = 80;
 
 	private static colorBackground: string[] = [
-		"red",
+		"gray",
 		"blue",
 		"green",
 		"yellow",
@@ -80,7 +81,6 @@ export class GameBoard {
 		flowManager: FlowManager,
 		forceSeed?: number
 	): GameBoard {
-		// Cleanup existing board for this ID to prevent duplicates/ghosting
 		if (this.instances[id]) {
 			this.instances[id].destroy();
 			delete this.instances[id];
@@ -183,7 +183,7 @@ export class GameBoard {
 
 	private recalculatePosition(scene: g.Scene) {
 		const boardWidth = GameBoard.COLS * GameBoard.puyoSize;
-		const gap = 50;
+		const gap = this.yLocation;
 		const totalWidth = GameBoard.totalBoardsInGame * boardWidth + (GameBoard.totalBoardsInGame - 1) * gap;
 		const startX = (g.game.width - totalWidth) / 2;
 
@@ -203,19 +203,19 @@ export class GameBoard {
 			scene: scene,
 			parent: this.rootParent,
 			x: offsetX,
-			y: 50,
+			y: this.yLocation,
 		});
 		this.ghostPuyoNode = new g.E({
 			scene: scene,
 			parent: this.rootParent,
 			x: offsetX,
-			y: 50,
+			y: this.yLocation,
 		});
 		this.currentPuyoNode = new g.E({
 			scene: scene,
 			parent: this.rootParent,
 			x: offsetX,
-			y: 50,
+			y: this.yLocation,
 		});
 	}
 
@@ -271,7 +271,7 @@ export class GameBoard {
 	public fillBackground() {
 		const scene = g.game.scene();
 		const boardWidth = GameBoard.COLS * GameBoard.puyoSize;
-		const gap = 50;
+		const gap = this.yLocation;
 		const totalWidth = GameBoard.totalBoardsInGame * boardWidth + (GameBoard.totalBoardsInGame - 1) * gap;
 		const startX = (g.game.width - totalWidth) / 2;
 		const offsetX = startX + this.getVisualIndex() * (boardWidth + gap);
@@ -282,7 +282,7 @@ export class GameBoard {
 			scene: scene,
 			parent: this.rootParent,
 			x: offsetX,
-			y: 50,
+			y: this.yLocation,
 			opacity: 0.45,
 			width: GameBoard.puyoSize * GameBoard.COLS,
 			height: GameBoard.puyoSize * GameBoard.ROWS,
@@ -469,21 +469,16 @@ export class GameBoard {
 
 				if (!g.game.isSkipping) {
 					await this.waitFrames(STEP_DELAY);
-
-					const scene = g.game.scene();
-					const blinkers: g.FilledRect[] = [];
+					const blinkers: g.E[] = [];
 					step.matches.forEach((p) => {
-						const rect = new g.FilledRect({
-							scene: scene,
-							parent: this.boardNode,
-							x: p.x * GameBoard.puyoSize,
-							y: p.y * GameBoard.puyoSize,
-							width: GameBoard.puyoSize - 2,
-							height: GameBoard.puyoSize - 2,
-							cssColor: "white",
-							opacity: 1,
-						});
-						blinkers.push(rect);
+						let blinkSpr = Helper.newSprite("/assets/blink.png");
+						this.boardNode.append(blinkSpr);
+						blinkSpr.x = p.x * GameBoard.puyoSize;
+						blinkSpr.y = p.y * GameBoard.puyoSize;
+						blinkSpr.scaleX = (GameBoard.puyoSize - 2) / blinkSpr.width;
+						blinkSpr.scaleY = (GameBoard.puyoSize - 2) / blinkSpr.height;
+						blinkSpr.modified();
+						blinkers.push(blinkSpr);
 					});
 
 					let elapsed = 0;
@@ -580,7 +575,7 @@ export class GameBoard {
 	public renderBoard(renderData?: number[][]) {
 		const targetBoard = renderData || this.board;
 		const boardWidth = GameBoard.COLS * GameBoard.puyoSize;
-		const gap = 50;
+		const gap = this.yLocation;
 		const totalWidth = GameBoard.totalBoardsInGame * boardWidth + (GameBoard.totalBoardsInGame - 1) * gap;
 		const startX = (g.game.width - totalWidth) / 2;
 		const offsetX = startX + this.getVisualIndex() * (boardWidth + gap);
@@ -592,7 +587,7 @@ export class GameBoard {
 			scene: g.game.scene(),
 			parent: this.rootParent,
 			x: offsetX,
-			y: 50,
+			y: this.yLocation,
 		});
 
 		for (let r = 0; r < GameBoard.ROWS; r++) {
@@ -613,7 +608,7 @@ export class GameBoard {
 		if (this.ghostPuyoNode && !this.ghostPuyoNode.destroyed()) {
 			this.ghostPuyoNode.remove();
 			this.ghostPuyoNode.x = offsetX;
-			this.ghostPuyoNode.y = 50;
+			this.ghostPuyoNode.y = this.yLocation;
 			this.ghostPuyoNode.modified();
 			if (this.boardNode.parent)
 				this.boardNode.parent.append(this.ghostPuyoNode);
@@ -621,7 +616,7 @@ export class GameBoard {
 		if (this.currentPuyoNode && !this.currentPuyoNode.destroyed()) {
 			this.currentPuyoNode.remove();
 			this.currentPuyoNode.x = offsetX;
-			this.currentPuyoNode.y = 50;
+			this.currentPuyoNode.y = this.yLocation;
 			this.currentPuyoNode.modified();
 			if (this.boardNode.parent)
 				this.boardNode.parent.append(this.currentPuyoNode);
@@ -640,13 +635,13 @@ export class GameBoard {
 			scene: g.game.scene(),
 			parent: this.boardNode.parent,
 			x: offsetX,
-			y: 50,
+			y: this.yLocation,
 		});
 		this.currentPuyoNode = new g.E({
 			scene: g.game.scene(),
 			parent: this.boardNode.parent,
 			x: offsetX,
-			y: 50,
+			y: this.yLocation,
 		});
 		const createPuyo = (
 			x: number,
@@ -666,7 +661,7 @@ export class GameBoard {
 			targetParent.append(spr);
 			spr.x = x * GameBoard.puyoSize + (isGhost ? offset : 0);
 			spr.y = y * GameBoard.puyoSize + (isGhost ? offset : 0);
-			spr.opacity = isGhost ? 0.5 : 1;
+			spr.opacity = isGhost ? 0.0 : 1;
 
 			spr.scaleX = size / spr.width;
 			spr.scaleY = size / spr.height;
@@ -720,7 +715,7 @@ export class GameBoard {
 	}
 
 	public static getAssetPath(idx: number): string {
-		const assets = ["", "/assets/white.png", "/assets/yellow.png"];
+		const assets = ["", "/assets/red.png", "/assets/yellow.png"];
 		return assets[idx];
 	}
 

@@ -558,7 +558,7 @@ export class UIManager {
 			const container = new g.E({
 				scene: this.scene,
 				parent: this.uiLayer,
-				x: offsetX + boardWidth + 5,
+				x: offsetX + boardWidth + 50,
 				y: 60,
 				width: GameBoard.puyoSize,
 				height: GameBoard.puyoSize * 2,
@@ -566,7 +566,7 @@ export class UIManager {
 			});
 
 			// Create Sub Puyo
-			const sub = Helper.newSprite("/assets/white.png");
+			const sub = Helper.newSprite("/assets/red.png");
 			container.append(sub);
 			sub.x = 0;
 			sub.y = 0;
@@ -577,7 +577,7 @@ export class UIManager {
 			sub.modified();
 
 			// Create Main Puyo
-			const main = Helper.newSprite("/assets/white.png");
+			const main = Helper.newSprite("/assets/red.png");
 			container.append(main);
 			main.x = 0;
 			main.y = GameBoard.puyoSize;

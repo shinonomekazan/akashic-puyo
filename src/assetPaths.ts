@@ -20,8 +20,11 @@ export const assetPaths = [
 	"/assets/ui/rotate-ccw.png",
 	//imgs
 	"/assets/background.png",
-	"/assets/white.png",
+	"/assets/blink.png",
+	"/assets/red.png",
 	"/assets/yellow.png",
+	"/assets/blue.png",
+	"/assets/green.png",
 	//sound
 	"/assets/sound/se_gameover",
 	"/assets/sound/se_harddrop",
