@@ -7,6 +7,7 @@ interface ResolveStep {
 	type: "clear" | "drop";
 	matches?: { x: number; y: number }[];
 	score?: number;
+	colorCount?: number;
 }
 
 export class GameBoard {
@@ -418,13 +419,34 @@ export class GameBoard {
 				const score = toRemove.length * 100;
 				this.score += score;
 
-				steps.push({
-					type: "clear",
-					matches: toRemove,
-					score: score,
+				let garbageToRemove: { x: number; y: number }[] = [];
+				const dirs = [{ dx: 0, dy: 1 }, { dx: 0, dy: -1 }, { dx: 1, dy: 0 }, { dx: -1, dy: 0 }];
+
+				toRemove.forEach(p => {
+					dirs.forEach(d => {
+						const nx = p.x + d.dx;
+						const ny = p.y + d.dy;
+						if (nx >= 0 && nx < GameBoard.COLS && ny >= 0 && ny < GameBoard.ROWS) {
+							if (tempBoard[ny][nx] === GameBoard.GARBAGE_ID) {
+								const alreadyAdded = garbageToRemove.some(g => g.x === nx && g.y === ny);
+								if (!alreadyAdded) {
+									garbageToRemove.push({ x: nx, y: ny });
+								}
+							}
+						}
+					});
 				});
 
-				toRemove.forEach((p) => {
+				const totalCleared = [...toRemove, ...garbageToRemove];
+
+				steps.push({
+					type: "clear",
+					matches: totalCleared,
+					score: score,
+					colorCount: toRemove.length
+				});
+
+				totalCleared.forEach((p) => {
 					tempBoard[p.y][p.x] = 0;
 					this.board[p.y][p.x] = 0;
 				});
@@ -457,9 +479,10 @@ export class GameBoard {
 			this.busyUntil = g.game.age + (step.type === "clear" ? BLINK_DURATION + STEP_DELAY : STEP_DELAY);
 
 			if (step.type === "clear") {
+				const attackCount = step.colorCount !== undefined ? step.colorCount : step.matches.length;
 				this.flowManager.fireAsync(
 					FlowEventName.AddScore,
-					new addScore_sender(this.playerIndex, step.score)
+					new addScore_sender(this.playerIndex, step.score, attackCount)
 				);
 
 				if (!g.game.isSkipping) {
@@ -569,9 +592,18 @@ export class GameBoard {
 		}
 	}
 
-	public dropGarbage() {
-		if (this.board[0][0] !== 0) return;
-		this.board[0][0] = GameBoard.GARBAGE_ID;
+	public dropGarbage(amount: number) {
+		let placed = 0;
+		for (let r = 0; r < GameBoard.ROWS; r++) {
+			for (let c = 0; c < GameBoard.COLS; c++) {
+				if (placed >= amount) break;
+				if (this.board[r][c] === 0) {
+					this.board[r][c] = GameBoard.GARBAGE_ID;
+					placed++;
+				}
+			}
+			if (placed >= amount) break;
+		}
 		this.applyGravity(this.board);
 		this.renderBoard();
 	}

@@ -53,9 +53,12 @@ export class MainScene extends g.Scene {
 		this.onKeyDownHandler = (ev: any) => {
 			const myP = this.syncFramework?.state.players[g.game.selfId];
 			if (!myP || myP.status !== "PLAYING") return;
+
 			if (ev.key === "g") {
-				this.syncFramework.dispatch("garbage", { targetId: g.game.selfId });
+				this.syncFramework.dispatch("garbage", { targetId: g.game.selfId, amount: 12});
+				return;
 			}
+
 			if (this.syncFramework) {
 				this.syncFramework.dispatch("input", { key: ev.key });
 			}
@@ -520,8 +523,9 @@ export class MainScene extends g.Scene {
 				const targetId = payload.targetId;
 				if (state.players[targetId] && state.players[targetId].status === "GAMEOVER") return;
 				const board = GameBoard.get(targetId);
+				const amount = payload.amount || 1;
 				if (board) {
-					this.flowManager.fireAsync(FlowEventName.AddGarbage, new addGarbage_sender(board.playerIndex));
+					this.flowManager.fireAsync(FlowEventName.AddGarbage, new addGarbage_sender(board.playerIndex, amount));
 				}
 			}
 		);

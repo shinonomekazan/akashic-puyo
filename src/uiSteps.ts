@@ -79,6 +79,21 @@ export class UIStep extends BaseStep {
 						scoreSender.playerIdx,
 						board.score
 					);
+
+					const currentScene = g.game.scene() as any;
+					if (currentScene.syncFramework && scoreSender.clearedCount > 0) {
+						let isMyAction = false;
+						if (board.id === g.game.selfId) isMyAction = true;
+						if (board.id === "BOT_" + g.game.selfId) isMyAction = true;
+
+						if (isMyAction) {
+							const allIds = Object.keys(GameBoard.instances);
+							const enemyId = allIds.find(id => id !== board.id);
+							if (enemyId) {
+								currentScene.syncFramework.dispatch("garbage", { targetId: enemyId, amount: scoreSender.clearedCount });
+							}
+						}
+					}
 				}
 				break;
 
@@ -86,16 +101,9 @@ export class UIStep extends BaseStep {
 				const currentScene = g.game.scene() as any;
 				const syncState = currentScene.syncFramework ? currentScene.syncFramework.state : null;
 
-				// Identify who lost based on Sender or State
 				const goSender = getSender(eventName) as gameOver_sender;
 
-				// Logic:
-				// If I am in Solo/NPC mode:
-				//   Only show Game Over if I (or my bot) am the one who lost.
-				//   If sender indicates someone else lost, IGNORE.
-
 				let loserId: string = null;
-				// Map index to ID using local board instances
 				if (goSender) {
 					for (let id in GameBoard.instances) {
 						if (GameBoard.instances[id].playerIndex === goSender.loserPlayerIdx) {
@@ -104,29 +112,23 @@ export class UIStep extends BaseStep {
 						}
 					}
 				} else if (syncState) {
-					// Fallback if triggered without sender (rare in new logic)
-					// check players with status GAMEOVER
 					for (let id in syncState.players) {
 						if (syncState.players[id].status === "GAMEOVER") {
-							// Just pick one for display purpose if multiple
 							loserId = id;
 							break;
 						}
 					}
 				}
 
-				if (!loserId) return; // Should not happen
+				if (!loserId) return;
 
-				// Check relevancy
 				const myP = syncState ? syncState.players[g.game.selfId] : null;
 				if (myP) {
 					if (myP.mode === "SOLO" || myP.mode === "NPC") {
-						// Only care if I lost or my bot lost
 						if (loserId !== g.game.selfId && loserId !== "BOT_" + g.game.selfId) {
 							return;
 						}
 					}
-					// If PVP, we generally want to see the result
 				}
 
 				let loserPlayerIdx = -1;

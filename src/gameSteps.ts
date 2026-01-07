@@ -43,7 +43,7 @@ export class GameStateStep extends BaseStep {
 				if (gSender) {
 					const board = GameBoard.getByIndex(gSender.playerIdx);
 					if (board) {
-						board.dropGarbage();
+						board.dropGarbage(gSender.amount);
 					}
 				}
 				break;

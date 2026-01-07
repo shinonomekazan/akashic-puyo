@@ -14,7 +14,6 @@ export function getSender(eventName?: FlowEventName): any {
 	}
 	return senders.get(FlowManager.eventName);
 }
-//sender:
 export class client_sender {
 	constructor(playerIdx: number) {
 		this.playerIdx = playerIdx;
@@ -35,11 +34,13 @@ export class move_sender extends client_sender {
 	xy: Vec2Like;
 }
 export class addScore_sender extends client_sender {
-	constructor(playerIdx: number, score: number) {
+	constructor(playerIdx: number, score: number, clearedCount: number = 0) {
 		super(playerIdx);
 		this.score = score;
+		this.clearedCount = clearedCount;
 	}
 	score: number;
+	clearedCount: number;
 }
 export class nextPuyo_sender extends client_sender {
 	constructor(playerIdx: number, colorMain: number, colorSub: number) {
@@ -68,7 +69,9 @@ export class selectMode_sender {
 }
 
 export class addGarbage_sender extends client_sender {
-	constructor(playerIdx: number) {
+	constructor(playerIdx: number, amount: number) {
 		super(playerIdx);
+		this.amount = amount;
 	}
+	amount: number;
 }
