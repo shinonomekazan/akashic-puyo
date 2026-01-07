@@ -14,8 +14,8 @@ export class GameBoard {
 	public static readonly COLS = 6;
 	public static puyoSize: number = 30;
 	public static instances: { [id: string]: GameBoard } = {};
-	// Static on the client side. Since P1 and P2 are different clients, this works for "View" logic.
 	public static totalBoardsInGame: number = 2;
+	public static readonly GARBAGE_ID: number = 9;
 
 	public board: number[][] = [];
 	public currentPuyo: {
@@ -166,7 +166,6 @@ export class GameBoard {
 	}
 
 	private getVisualIndex(): number {
-		// If total boards is 1 (Solo), always center (return 0 relative to single layout)
 		if (GameBoard.totalBoardsInGame === 1) return 0;
 
 		let localPlayerIndex = 0;
@@ -187,7 +186,6 @@ export class GameBoard {
 		const totalWidth = GameBoard.totalBoardsInGame * boardWidth + (GameBoard.totalBoardsInGame - 1) * gap;
 		const startX = (g.game.width - totalWidth) / 2;
 
-		// If Solo, offset is just startX. If Multi, depends on index.
 		const visualIndex = this.getVisualIndex();
 		const offsetX = startX + visualIndex * (boardWidth + gap);
 
@@ -235,7 +233,6 @@ export class GameBoard {
 		if (this.ghostPuyoNode && !this.ghostPuyoNode.destroyed()) this.ghostPuyoNode.destroy();
 		if (this.currentPuyoNode && !this.currentPuyoNode.destroyed()) this.currentPuyoNode.destroy();
 
-		// Re-create nodes to be safe and clean
 		this.updatePuyoView();
 
 		if (this.backgroundNode && !this.backgroundNode.destroyed()) {
@@ -291,7 +288,6 @@ export class GameBoard {
 				this.playerIndex % GameBoard.colorBackground.length
 				],
 		});
-		// Ensure background is behind everything
 		Helper.insertBefore(this.rootParent.children[0], this.backgroundNode);
 	}
 
@@ -309,7 +305,6 @@ export class GameBoard {
 			return;
 		}
 
-		// Double check to avoid ghost puyos if spawn is called rapidly
 		if (this.currentPuyo) return;
 
 		this.currentPuyo = {
@@ -538,6 +533,8 @@ export class GameBoard {
 		visited: boolean[][],
 		matches: { x: number; y: number }[]
 	) {
+		if (color === GameBoard.GARBAGE_ID) return;
+
 		if (x < 0 || x >= GameBoard.COLS || y < 0 || y >= GameBoard.ROWS)
 			return;
 		if (visited[y][x] || board[y][x] !== color) return;
@@ -570,6 +567,13 @@ export class GameBoard {
 			for (let i = 0; i < validBlocks.length; i++)
 				board[GameBoard.ROWS - 1 - i][c] = validBlocks[i];
 		}
+	}
+
+	public dropGarbage() {
+		if (this.board[0][0] !== 0) return;
+		this.board[0][0] = GameBoard.GARBAGE_ID;
+		this.applyGravity(this.board);
+		this.renderBoard();
 	}
 
 	public renderBoard(renderData?: number[][]) {
@@ -715,6 +719,7 @@ export class GameBoard {
 	}
 
 	public static getAssetPath(idx: number): string {
+		if (idx === GameBoard.GARBAGE_ID) return "/assets/garbage.png";
 		const assets = ["", "/assets/red.png", "/assets/yellow.png"];
 		return assets[idx];
 	}

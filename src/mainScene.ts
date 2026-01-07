@@ -5,7 +5,7 @@ import { FlowCreator } from "./flowCreator";
 import { GameBoard } from "./gameBoard";
 import { Player } from "./Player";
 import { UIManager } from "./uiManager";
-import { move_sender, selectMode_sender } from "./sender";
+import { addGarbage_sender, move_sender, selectMode_sender } from "./sender";
 import { SoundManager } from "./soundManager";
 import { SyncFramework } from "./SyncFramework";
 
@@ -53,7 +53,9 @@ export class MainScene extends g.Scene {
 		this.onKeyDownHandler = (ev: any) => {
 			const myP = this.syncFramework?.state.players[g.game.selfId];
 			if (!myP || myP.status !== "PLAYING") return;
-
+			if (ev.key === "g") {
+				this.syncFramework.dispatch("garbage", { targetId: g.game.selfId });
+			}
 			if (this.syncFramework) {
 				this.syncFramework.dispatch("input", { key: ev.key });
 			}
@@ -507,6 +509,19 @@ export class MainScene extends g.Scene {
 					sen.xy = { x: 0, y: 1 };
 					sen.isHardDrop = false;
 					this.flowManager.fireAsync(FlowEventName.Move, sen);
+				}
+			}
+		);
+
+		this.syncFramework.register(
+			"garbage",
+			(state, payload) => { },
+			(payload, isLocal, state) => {
+				const targetId = payload.targetId;
+				if (state.players[targetId] && state.players[targetId].status === "GAMEOVER") return;
+				const board = GameBoard.get(targetId);
+				if (board) {
+					this.flowManager.fireAsync(FlowEventName.AddGarbage, new addGarbage_sender(board.playerIndex));
 				}
 			}
 		);

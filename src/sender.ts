@@ -66,3 +66,9 @@ export class selectMode_sender {
 	}
 	mode: "SOLO" | "NPC" | "PVP";
 }
+
+export class addGarbage_sender extends client_sender {
+	constructor(playerIdx: number) {
+		super(playerIdx);
+	}
+}

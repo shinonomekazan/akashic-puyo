@@ -1,7 +1,7 @@
 import { BaseStep } from "./flow/step";
 import { FlowEventName } from "./flow/eventName";
 import { GameBoard } from "./gameBoard";
-import { gameOver_sender, getSender, move_sender, rotate_sender } from "./sender";
+import { addGarbage_sender, gameOver_sender, getSender, move_sender, rotate_sender } from "./sender";
 import { MainScene } from "./mainScene";
 
 export class GameStateStep extends BaseStep {
@@ -37,6 +37,15 @@ export class GameStateStep extends BaseStep {
 				}
 				break;
 			case FlowEventName.UpdateNextPuyo:
+				break;
+			case FlowEventName.AddGarbage:
+				const gSender = getSender(eventName) as addGarbage_sender;
+				if (gSender) {
+					const board = GameBoard.getByIndex(gSender.playerIdx);
+					if (board) {
+						board.dropGarbage();
+					}
+				}
 				break;
 		}
 	}

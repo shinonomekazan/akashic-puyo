@@ -21,6 +21,7 @@ export const assetPaths = [
 	//imgs
 	"/assets/background.png",
 	"/assets/blink.png",
+	"/assets/garbage.png",
 	"/assets/red.png",
 	"/assets/yellow.png",
 	"/assets/blue.png",

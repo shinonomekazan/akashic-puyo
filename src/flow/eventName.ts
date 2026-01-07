@@ -11,4 +11,5 @@ export enum FlowEventName {
 	ResetGame,
 	UpdateNextPuyo,
 	SelectMode,
+	AddGarbage,
 }
