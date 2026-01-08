@@ -13,7 +13,7 @@ interface ResolveStep {
 export class GameBoard {
 	public static readonly ROWS = 12;
 	public static readonly COLS = 6;
-	public static readonly MAX_GARBAGE: number = 10;
+	public static readonly MAX_GARBAGE: number = 30;
 	public static puyoSize: number = 30;
 	public static instances: { [id: string]: GameBoard } = {};
 	public static totalBoardsInGame: number = 2;
@@ -296,7 +296,7 @@ export class GameBoard {
 			parent: this.rootParent,
 			x: offsetX,
 			y: this.yLocation,
-			opacity: 0.45,
+			opacity: 0.6,
 			width: GameBoard.puyoSize * GameBoard.COLS,
 			height: GameBoard.puyoSize * GameBoard.ROWS,
 			cssColor:
@@ -401,7 +401,7 @@ export class GameBoard {
 		this.renderBoard();
 
 		if (steps.length === 0 && this.nuisanceQueue > 0) {
-			this.dropPendingGarbage();
+			await this.dropPendingGarbage();
 		}
 	}
 
@@ -634,8 +634,10 @@ export class GameBoard {
 		this.nuisanceQueue += amount;
 	}
 
-	public dropPendingGarbage() {
+	public async dropPendingGarbage() {
 		if (this.nuisanceQueue <= 0) return;
+
+		this.isAnimating = true;
 
 		const dropAmount = Math.min(this.nuisanceQueue, GameBoard.MAX_GARBAGE);
 		this.nuisanceQueue -= dropAmount;
@@ -647,13 +649,10 @@ export class GameBoard {
 
 		const fullRows = Math.floor(dropAmount / GameBoard.COLS);
 		const remainder = dropAmount % GameBoard.COLS;
+		let garbageCounts = new Array(GameBoard.COLS).fill(0);
 
-		for (let r = 0; r < fullRows; r++) {
-			for (let c = 0; c < GameBoard.COLS; c++) {
-				if (this.board[r][c] === 0) {
-					this.board[r][c] = GameBoard.GARBAGE_ID;
-				}
-			}
+		for (let c = 0; c < GameBoard.COLS; c++) {
+			garbageCounts[c] += fullRows;
 		}
 
 		if (remainder > 0) {
@@ -663,19 +662,115 @@ export class GameBoard {
 				this.garbageRngIterationCount++;
 				[cols[i], cols[j]] = [cols[j], cols[i]];
 			}
+			for (let i = 0; i < remainder; i++) {
+				garbageCounts[cols[i]]++;
+			}
+		}
 
-			const targetRow = fullRows;
-			if (targetRow < GameBoard.ROWS) {
-				for (let i = 0; i < remainder; i++) {
-					if (this.board[targetRow][cols[i]] === 0) {
-						this.board[targetRow][cols[i]] = GameBoard.GARBAGE_ID;
-					}
+		let tempSprites: g.E[] = [];
+		if (!g.game.isSkipping) {
+			tempSprites = await this.animateGarbageFall(garbageCounts);
+		}
+
+		for (let c = 0; c < GameBoard.COLS; c++) {
+			const count = garbageCounts[c];
+			let placed = 0;
+			for (let r = 0; r < GameBoard.ROWS && placed < count; r++) {
+				if (this.board[r][c] === 0) {
+					this.board[r][c] = GameBoard.GARBAGE_ID;
+					placed++;
 				}
 			}
 		}
 
 		this.applyGravity(this.board);
 		this.renderBoard();
+		if (tempSprites.length > 0) {
+			tempSprites.forEach(s => {
+				if (!s.destroyed()) s.destroy();
+			});
+		}
+		this.isAnimating = false;
+	}
+
+	private async animateGarbageFall(garbageCounts: number[]): Promise<g.E[]> {
+		const sprites: { sprite: g.E; targetY: number; dy: number }[] = [];
+		const activeSprites: { sprite: g.E; targetY: number; dy: number }[] = [];
+
+		for (let c = 0; c < GameBoard.COLS; c++) {
+			const count = garbageCounts[c];
+			if (count === 0) continue;
+
+			let stackHeight = 0;
+			for (let r = GameBoard.ROWS - 1; r >= 0; r--) {
+				if (this.board[r][c] !== 0) stackHeight++;
+				else break;
+			}
+
+			for (let i = 0; i < count; i++) {
+				const visualRow = (GameBoard.ROWS - 1) - stackHeight - i;
+				if (visualRow < 0) continue;
+
+				const targetY = visualRow * GameBoard.puyoSize;
+				const rand = this.garbageRng.generate();
+				this.garbageRngIterationCount++;
+				const startY = -40 - (i * 35) - (rand * 20);
+
+				const spr = Helper.newSprite("/assets/garbage.png");
+				this.boardNode.append(spr);
+				spr.x = c * GameBoard.puyoSize;
+				spr.y = startY;
+
+				const targetSize = GameBoard.puyoSize - 2;
+				spr.scaleX = targetSize / spr.width;
+				spr.scaleY = targetSize / spr.height;
+				spr.modified();
+
+				const item = { sprite: spr, targetY: targetY, dy: 0 };
+				sprites.push(item);
+				activeSprites.push(item);
+			}
+		}
+
+		if (sprites.length === 0) return;
+
+		this.busyUntil = g.game.age + 60;
+
+		return new Promise<g.E[]>((resolve) => {
+			const GRAVITY = 1.5;
+			const BOUNCE_DAMP = -0.1;
+
+			const handler = () => {
+				let allFinished = true;
+
+				activeSprites.forEach((item) => {
+					if (item.dy === 0 && item.sprite.y === item.targetY) return;
+
+					item.dy += GRAVITY;
+					item.sprite.y += item.dy;
+
+					if (item.sprite.y >= item.targetY) {
+						item.sprite.y = item.targetY;
+						if (Math.abs(item.dy) > 2) {
+							item.dy *= BOUNCE_DAMP;
+							allFinished = false;
+						} else {
+							item.dy = 0;
+						}
+					} else {
+						allFinished = false;
+					}
+					item.sprite.modified();
+				});
+
+				if (allFinished) {
+					g.game.scene().onUpdate.remove(handler);
+					resolve(sprites.map(s => s.sprite));
+				}
+			};
+
+			g.game.scene().onUpdate.add(handler);
+		});
 	}
 
 	public renderBoard(renderData?: number[][]) {
