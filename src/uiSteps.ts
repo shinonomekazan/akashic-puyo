@@ -6,7 +6,7 @@ import {
 	gameOver_sender,
 	getSender,
 	nextPuyo_sender,
-	selectMode_sender,
+	client_sender,
 } from "./sender";
 import { GameBoard } from "./gameBoard";
 
@@ -180,6 +180,15 @@ export class UIStep extends BaseStep {
 						0
 					);
 					this.uiManager.setGarbageCount(GameBoard.get(id).playerIndex, 0);
+				}
+				break;
+			case FlowEventName.UpdateGarbageCount:
+				const uSender = getSender(eventName) as client_sender;
+				if (uSender) {
+					const board = GameBoard.getByIndex(uSender.playerIdx);
+					if (board) {
+						this.uiManager.setGarbageCount(board.playerIndex, board.nuisanceQueue);
+					}
 				}
 				break;
 		}

@@ -12,4 +12,5 @@ export enum FlowEventName {
 	UpdateNextPuyo,
 	SelectMode,
 	AddGarbage,
+	UpdateGarbageCount
 }

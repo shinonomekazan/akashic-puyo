@@ -1,6 +1,6 @@
 import { FlowEventName } from "./flow/eventName";
 import { FlowManager } from "./flow/flowManager";
-import { addScore_sender, gameOver_sender, nextPuyo_sender } from "./sender";
+import { addScore_sender, gameOver_sender, nextPuyo_sender, client_sender } from "./sender";
 import { Helper } from "./helper";
 
 interface ResolveStep {
@@ -13,6 +13,7 @@ interface ResolveStep {
 export class GameBoard {
 	public static readonly ROWS = 12;
 	public static readonly COLS = 6;
+	public static readonly MAX_GARBAGE: number = 10;
 	public static puyoSize: number = 30;
 	public static instances: { [id: string]: GameBoard } = {};
 	public static totalBoardsInGame: number = 2;
@@ -636,8 +637,13 @@ export class GameBoard {
 	public dropPendingGarbage() {
 		if (this.nuisanceQueue <= 0) return;
 
-		const dropAmount = Math.min(this.nuisanceQueue, 30);
+		const dropAmount = Math.min(this.nuisanceQueue, GameBoard.MAX_GARBAGE);
 		this.nuisanceQueue -= dropAmount;
+
+		this.flowManager.fireAsync(
+			FlowEventName.UpdateGarbageCount,
+			new client_sender(this.playerIndex)
+		);
 
 		const fullRows = Math.floor(dropAmount / GameBoard.COLS);
 		const remainder = dropAmount % GameBoard.COLS;

@@ -47,5 +47,6 @@ export class FlowCreator {
 		);
 
 		manager.addFlow(new Flow(FlowEventName.AddGarbage, [gameStateStep]));
+		manager.addFlow(new Flow(FlowEventName.UpdateGarbageCount, [uiStep]));
 	}
 }

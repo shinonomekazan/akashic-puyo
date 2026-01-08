@@ -478,7 +478,6 @@ export class UIManager {
 	public showModeSelection(isHost: boolean) {
 		this.modeSelectionContainer.show();
 
-		// Enable all modes for everyone
 		for (const mode in this.modeButtons) {
 			const { btn, lbl } = this.modeButtons[mode];
 
