@@ -3,7 +3,6 @@ import { GameBoard } from "./gameBoard";
 import { Localization } from "./localization";
 import { SoundManager } from "./soundManager";
 import { Helper } from "./helper";
-import { selectMode_sender } from "./sender";
 
 export class UIManager {
 	public layoutRoot: g.E;
@@ -27,6 +26,9 @@ export class UIManager {
 	private nextPuyoContainers: { [playerIdx: number]: g.E } = {};
 	private nextPuyoMainNodes: { [playerIdx: number]: g.Sprite } = {};
 	private nextPuyoSubNodes: { [playerIdx: number]: g.Sprite } = {};
+
+	private garbageContainers: { [playerIdx: number]: g.E } = {};
+	private garbageLabels: { [playerIdx: number]: g.Label } = {};
 
 	private gameOverContainer: g.E;
 	private gameOverLabel: g.Label;
@@ -61,6 +63,7 @@ export class UIManager {
 		this.createLobbyUI();
 		this.createScoreUI();
 		this.createNextPuyoUI();
+		this.createGarbage();
 		this.createGameOverUI();
 		this.createLoadingUI();
 		this.createUIController();
@@ -592,6 +595,44 @@ export class UIManager {
 		}
 	}
 
+	private createGarbage() {
+		for (let i = 0; i < 2; i++) {
+			const container = new g.E({
+				scene: this.scene,
+				parent: this.uiLayer,
+				hidden: true
+			});
+
+			const size = 30;
+			const icon = Helper.newSprite("/assets/garbage.png");
+			icon.scaleX = size / icon.width;
+			icon.scaleY = size / icon.height;
+			icon.modified();
+			container.append(icon);
+
+			const label = new g.Label({
+				scene: this.scene,
+				parent: container,
+				font: globalThis.font,
+				text: "x0",
+				fontSize: 20,
+				textColor: "white",
+				x: size + 5,
+				y: (size - 20) / 2 - 0
+			});
+
+			this.garbageContainers[i] = container;
+			this.garbageLabels[i] = label;
+		}
+	}
+
+	public setGarbageCount(playerIdx: number, count: number) {
+		if (this.garbageLabels[playerIdx]) {
+			this.garbageLabels[playerIdx].text = "x" + count;
+			this.garbageLabels[playerIdx].invalidate();
+		}
+	}
+
 	public refreshScoreLayout() {
 		const totalBoards = GameBoard.totalBoardsInGame;
 		const boardWidth = GameBoard.COLS * GameBoard.puyoSize;
@@ -622,6 +663,15 @@ export class UIManager {
 				this.nextPuyoContainers[i].x = offsetX + boardWidth + 5;
 				this.nextPuyoContainers[i].modified();
 				if (i >= totalBoards) this.nextPuyoContainers[i].hide();
+			}
+
+			if (this.garbageContainers[i]) {
+				this.garbageContainers[i].x = offsetX;
+				this.garbageContainers[i].y = 55;
+				this.garbageContainers[i].modified();
+				if (i >= totalBoards || totalBoards === 1) {
+					this.garbageContainers[i].hide();
+				}
 			}
 		}
 	}
@@ -776,6 +826,9 @@ export class UIManager {
 		const totalBoards = GameBoard.totalBoardsInGame;
 		for (let i = 0; i < totalBoards; i++) {
 			if (this.scoreLabels[i]) this.scoreLabels[i].show();
+			if (this.garbageContainers[i] && totalBoards > 1) {
+				this.garbageContainers[i].show();
+			}
 		}
 	}
 
@@ -785,6 +838,9 @@ export class UIManager {
 		}
 		for (let key in this.nextPuyoContainers) {
 			this.nextPuyoContainers[key].hide();
+		}
+		for (let key in this.garbageContainers) {
+			this.garbageContainers[key].hide();
 		}
 	}
 
