@@ -74,14 +74,14 @@ export class UIStep extends BaseStep {
 				const scoreSender = getSender(eventName) as addScore_sender;
 				const board = GameBoard.getByIndex(scoreSender.playerIdx);
 				if (board) {
-					board.score += scoreSender.score;
 					this.uiManager.updateScore(
 						scoreSender.playerIdx,
 						board.score
 					);
+					this.uiManager.setGarbageCount(board.playerIndex, board.nuisanceQueue);
 
 					const currentScene = g.game.scene() as any;
-					if (currentScene.syncFramework && scoreSender.clearedCount > 0) {
+					if (currentScene.syncFramework && scoreSender.garbageToSend > 0) {
 						let isMyAction = false;
 						if (board.id === g.game.selfId) isMyAction = true;
 						if (board.id === "BOT_" + g.game.selfId) isMyAction = true;
@@ -90,7 +90,7 @@ export class UIStep extends BaseStep {
 							const allIds = Object.keys(GameBoard.instances);
 							const enemyId = allIds.find(id => id !== board.id);
 							if (enemyId) {
-								currentScene.syncFramework.dispatch("garbage", { targetId: enemyId, amount: scoreSender.clearedCount });
+								currentScene.syncFramework.dispatch("garbage", { targetId: enemyId, amount: scoreSender.garbageToSend });
 							}
 						}
 					}
@@ -179,6 +179,7 @@ export class UIStep extends BaseStep {
 						GameBoard.get(id).playerIndex,
 						0
 					);
+					this.uiManager.setGarbageCount(GameBoard.get(id).playerIndex, 0);
 				}
 				break;
 		}

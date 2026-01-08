@@ -34,13 +34,13 @@ export class move_sender extends client_sender {
 	xy: Vec2Like;
 }
 export class addScore_sender extends client_sender {
-	constructor(playerIdx: number, score: number, clearedCount: number = 0) {
+	constructor(playerIdx: number, score: number, garbageToSend: number = 0) {
 		super(playerIdx);
 		this.score = score;
-		this.clearedCount = clearedCount;
+		this.garbageToSend = garbageToSend;
 	}
 	score: number;
-	clearedCount: number;
+	garbageToSend: number;
 }
 export class nextPuyo_sender extends client_sender {
 	constructor(playerIdx: number, colorMain: number, colorSub: number) {

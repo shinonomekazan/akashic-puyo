@@ -7,7 +7,7 @@ interface ResolveStep {
 	type: "clear" | "drop";
 	matches?: { x: number; y: number }[];
 	score?: number;
-	colorCount?: number;
+	garbageToSend?: number;
 }
 
 export class GameBoard {
@@ -35,6 +35,7 @@ export class GameBoard {
 	public currentPuyoNode: g.E = null;
 
 	public score: number = 0;
+	public nuisanceQueue: number = 0;
 
 	public isAnimating: boolean = false;
 	public isPaused: boolean = false;
@@ -56,9 +57,11 @@ export class GameBoard {
 		"purple",
 	];
 	private rng: g.RandomGenerator;
+	private garbageRng: g.RandomGenerator;
 	private flowManager: FlowManager;
 	private rngSeed: number;
 	public rngIterationCount: number = 0;
+	public garbageRngIterationCount: number = 0;
 
 	constructor(
 		id: string,
@@ -72,6 +75,7 @@ export class GameBoard {
 		this.rng = rng;
 		this.flowManager = flowManager;
 		this.rngSeed = rngSeed;
+		this.garbageRng = new g.XorshiftRandomGenerator(rngSeed ? rngSeed + 9999 : 0);
 	}
 
 	public static createPlayerBoard(
@@ -133,10 +137,12 @@ export class GameBoard {
 			playerIndex: this.playerIndex,
 			board: this.board,
 			score: this.score,
+			nuisanceQueue: this.nuisanceQueue,
 			currentPuyo: this.currentPuyo,
 			nextPuyo: this.nextPuyo,
 			rngSeed: this.rngSeed,
 			rngIterationCount: this.rngIterationCount,
+			garbageRngIterationCount: this.garbageRngIterationCount,
 			busyUntil: this.busyUntil
 		};
 	}
@@ -144,10 +150,12 @@ export class GameBoard {
 	public initFromSnapshot(data: any) {
 		this.board = data.board;
 		this.score = data.score;
+		this.nuisanceQueue = data.nuisanceQueue || 0;
 		this.currentPuyo = data.currentPuyo;
 		this.nextPuyo = data.nextPuyo;
 		this.rngSeed = data.rngSeed;
 		this.rngIterationCount = data.rngIterationCount || 0;
+		this.garbageRngIterationCount = data.garbageRngIterationCount || 0;
 
 		this.busyUntil = 0;
 		this.isAnimating = false;
@@ -158,6 +166,11 @@ export class GameBoard {
 			this.rng = new g.XorshiftRandomGenerator(this.rngSeed);
 			for (let i = 0; i < this.rngIterationCount; i++) {
 				this.rng.generate();
+			}
+
+			this.garbageRng = new g.XorshiftRandomGenerator(this.rngSeed + 9999);
+			for (let i = 0; i < this.garbageRngIterationCount; i++) {
+				this.garbageRng.generate();
 			}
 		}
 
@@ -223,6 +236,7 @@ export class GameBoard {
 			Array(GameBoard.COLS).fill(0)
 		);
 		this.score = 0;
+		this.nuisanceQueue = 0;
 		this.isAnimating = false;
 		this.isPaused = false;
 		this.currentPuyo = null;
@@ -381,14 +395,20 @@ export class GameBoard {
 
 		const startVisualBoard = this.board.map((row) => [...row]);
 		const steps = this.calculateResolveSteps();
+
 		await this.animateResolveSteps(startVisualBoard, steps);
 		this.renderBoard();
+
+		if (steps.length === 0 && this.nuisanceQueue > 0) {
+			this.dropPendingGarbage();
+		}
 	}
 
 	private calculateResolveSteps(): ResolveStep[] {
 		const steps: ResolveStep[] = [];
 		let causedClear = false;
 		let tempBoard = this.board.map(row => [...row]);
+		let chainCount = 0;
 
 		do {
 			causedClear = false;
@@ -416,8 +436,26 @@ export class GameBoard {
 
 			if (toRemove.length > 0) {
 				causedClear = true;
-				const score = toRemove.length * 100;
-				this.score += score;
+				chainCount++;
+				const scoreGain = toRemove.length;
+				this.score += scoreGain;
+				let baseGarbage = Math.max(1, scoreGain - 3);
+				let chainBonus = (chainCount - 1) * 3;
+				const rawGarbage = baseGarbage + chainBonus;
+
+				let garbageToSend = 0;
+
+				if (this.nuisanceQueue > 0) {
+					if (rawGarbage >= this.nuisanceQueue) {
+						garbageToSend = rawGarbage - this.nuisanceQueue;
+						this.nuisanceQueue = 0;
+					} else {
+						this.nuisanceQueue -= rawGarbage;
+						garbageToSend = 0;
+					}
+				} else {
+					garbageToSend = rawGarbage;
+				}
 
 				let garbageToRemove: { x: number; y: number }[] = [];
 				const dirs = [{ dx: 0, dy: 1 }, { dx: 0, dy: -1 }, { dx: 1, dy: 0 }, { dx: -1, dy: 0 }];
@@ -442,8 +480,8 @@ export class GameBoard {
 				steps.push({
 					type: "clear",
 					matches: totalCleared,
-					score: score,
-					colorCount: toRemove.length
+					score: scoreGain,
+					garbageToSend: garbageToSend
 				});
 
 				totalCleared.forEach((p) => {
@@ -479,10 +517,9 @@ export class GameBoard {
 			this.busyUntil = g.game.age + (step.type === "clear" ? BLINK_DURATION + STEP_DELAY : STEP_DELAY);
 
 			if (step.type === "clear") {
-				const attackCount = step.colorCount !== undefined ? step.colorCount : step.matches.length;
 				this.flowManager.fireAsync(
 					FlowEventName.AddScore,
-					new addScore_sender(this.playerIndex, step.score, attackCount)
+					new addScore_sender(this.playerIndex, step.score, step.garbageToSend)
 				);
 
 				if (!g.game.isSkipping) {
@@ -592,18 +629,45 @@ export class GameBoard {
 		}
 	}
 
-	public dropGarbage(amount: number) {
-		let placed = 0;
-		for (let r = 0; r < GameBoard.ROWS; r++) {
+	public receiveGarbage(amount: number) {
+		this.nuisanceQueue += amount;
+	}
+
+	public dropPendingGarbage() {
+		if (this.nuisanceQueue <= 0) return;
+
+		const dropAmount = Math.min(this.nuisanceQueue, 30);
+		this.nuisanceQueue -= dropAmount;
+
+		const fullRows = Math.floor(dropAmount / GameBoard.COLS);
+		const remainder = dropAmount % GameBoard.COLS;
+
+		for (let r = 0; r < fullRows; r++) {
 			for (let c = 0; c < GameBoard.COLS; c++) {
-				if (placed >= amount) break;
 				if (this.board[r][c] === 0) {
 					this.board[r][c] = GameBoard.GARBAGE_ID;
-					placed++;
 				}
 			}
-			if (placed >= amount) break;
 		}
+
+		if (remainder > 0) {
+			const cols = Array.from({ length: GameBoard.COLS }, (_, i) => i);
+			for (let i = cols.length - 1; i > 0; i--) {
+				const j = Math.floor(this.garbageRng.generate() * (i + 1));
+				this.garbageRngIterationCount++;
+				[cols[i], cols[j]] = [cols[j], cols[i]];
+			}
+
+			const targetRow = fullRows;
+			if (targetRow < GameBoard.ROWS) {
+				for (let i = 0; i < remainder; i++) {
+					if (this.board[targetRow][cols[i]] === 0) {
+						this.board[targetRow][cols[i]] = GameBoard.GARBAGE_ID;
+					}
+				}
+			}
+		}
+
 		this.applyGravity(this.board);
 		this.renderBoard();
 	}

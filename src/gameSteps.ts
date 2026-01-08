@@ -43,7 +43,8 @@ export class GameStateStep extends BaseStep {
 				if (gSender) {
 					const board = GameBoard.getByIndex(gSender.playerIdx);
 					if (board) {
-						board.dropGarbage(gSender.amount);
+						board.receiveGarbage(gSender.amount);
+						this.mainScene.uiManager.setGarbageCount(board.playerIndex, board.nuisanceQueue);
 					}
 				}
 				break;
