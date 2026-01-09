@@ -55,7 +55,7 @@ export class MainScene extends g.Scene {
 			if (!myP || myP.status !== "PLAYING") return;
 
 			if (ev.key === "g") {
-				this.syncFramework.dispatch("garbage", { targetId: g.game.selfId, amount: 12});
+				this.syncFramework.dispatch("garbage", { targetId: g.game.selfId, amount: 12 });
 				return;
 			}
 
@@ -63,7 +63,6 @@ export class MainScene extends g.Scene {
 				this.syncFramework.dispatch("input", { key: ev.key });
 			}
 		};
-
 		this.onLoad.add(this.onGameLoad, this);
 	}
 
@@ -115,6 +114,7 @@ export class MainScene extends g.Scene {
 					GameBoard.get(id).renderBoard();
 				}
 			}
+			this.refreshLobbyState(); 
 		});
 
 		this.syncFramework.init(this, (state) => {
