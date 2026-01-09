@@ -28,7 +28,9 @@ export class FlowCreator {
 		manager.addFlow(new Flow(FlowEventName.HideLobbyUI, [uiStep]));
 		manager.addFlow(new Flow(FlowEventName.SelectMode, [uiStep]));
 
-		manager.addFlow(new Flow(FlowEventName.UpdateNextPuyo, [uiStep, gameStateStep]));
+		manager.addFlow(
+			new Flow(FlowEventName.UpdateNextPuyo, [uiStep, gameStateStep])
+		);
 
 		manager.addFlow(new Flow(FlowEventName.Move, [soundStep, transStep]));
 		manager.addFlow(new Flow(FlowEventName.Move, [soundStep, transStep]));

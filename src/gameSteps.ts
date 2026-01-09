@@ -1,7 +1,13 @@
 import { BaseStep } from "./flow/step";
 import { FlowEventName } from "./flow/eventName";
 import { GameBoard } from "./gameBoard";
-import { addGarbage_sender, gameOver_sender, getSender, move_sender, rotate_sender } from "./sender";
+import {
+	addGarbage_sender,
+	gameOver_sender,
+	getSender,
+	move_sender,
+	rotate_sender,
+} from "./sender";
 import { MainScene } from "./mainScene";
 
 export class GameStateStep extends BaseStep {
@@ -27,7 +33,10 @@ export class GameStateStep extends BaseStep {
 			case FlowEventName.GameOver:
 				const sender = getSender(eventName) as gameOver_sender;
 				if (sender) {
-					this.mainScene.setGameOver(sender.loserPlayerIdx, sender.reason);
+					this.mainScene.setGameOver(
+						sender.loserPlayerIdx,
+						sender.reason
+					);
 				}
 				break;
 			case FlowEventName.ResetGame:
@@ -44,7 +53,10 @@ export class GameStateStep extends BaseStep {
 					const board = GameBoard.getByIndex(gSender.playerIdx);
 					if (board) {
 						board.receiveGarbage(gSender.amount);
-						this.mainScene.uiManager.setGarbageCount(board.playerIndex, board.nuisanceQueue);
+						this.mainScene.uiManager.setGarbageCount(
+							board.playerIndex,
+							board.nuisanceQueue
+						);
 					}
 				}
 				break;

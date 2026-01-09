@@ -10,7 +10,12 @@ export class Player {
 	public isBot: boolean;
 	private flowManager: FlowManager;
 
-	constructor(id: string, pIdx: number, flowManager: FlowManager, isBot: boolean = false) {
+	constructor(
+		id: string,
+		pIdx: number,
+		flowManager: FlowManager,
+		isBot: boolean = false
+	) {
 		this.id = id;
 		this.pIdx = pIdx;
 		this.ready = false;
@@ -23,7 +28,7 @@ export class Player {
 			id: this.id,
 			pIdx: this.pIdx,
 			ready: this.ready,
-			isBot: this.isBot
+			isBot: this.isBot,
 		};
 	}
 

@@ -1,6 +1,11 @@
 import { FlowEventName } from "./flow/eventName";
 import { FlowManager } from "./flow/flowManager";
-import { addScore_sender, gameOver_sender, nextPuyo_sender, client_sender } from "./sender";
+import {
+	addScore_sender,
+	gameOver_sender,
+	nextPuyo_sender,
+	client_sender,
+} from "./sender";
 import { Helper } from "./helper";
 
 interface ResolveStep {
@@ -76,7 +81,9 @@ export class GameBoard {
 		this.rng = rng;
 		this.flowManager = flowManager;
 		this.rngSeed = rngSeed;
-		this.garbageRng = new g.XorshiftRandomGenerator(rngSeed ? rngSeed + 9999 : 0);
+		this.garbageRng = new g.XorshiftRandomGenerator(
+			rngSeed ? rngSeed + 9999 : 0
+		);
 	}
 
 	public static createPlayerBoard(
@@ -108,10 +115,14 @@ export class GameBoard {
 	}
 
 	public destroy() {
-		if (this.boardNode && !this.boardNode.destroyed()) this.boardNode.destroy();
-		if (this.backgroundNode && !this.backgroundNode.destroyed()) this.backgroundNode.destroy();
-		if (this.ghostPuyoNode && !this.ghostPuyoNode.destroyed()) this.ghostPuyoNode.destroy();
-		if (this.currentPuyoNode && !this.currentPuyoNode.destroyed()) this.currentPuyoNode.destroy();
+		if (this.boardNode && !this.boardNode.destroyed())
+			this.boardNode.destroy();
+		if (this.backgroundNode && !this.backgroundNode.destroyed())
+			this.backgroundNode.destroy();
+		if (this.ghostPuyoNode && !this.ghostPuyoNode.destroyed())
+			this.ghostPuyoNode.destroy();
+		if (this.currentPuyoNode && !this.currentPuyoNode.destroyed())
+			this.currentPuyoNode.destroy();
 
 		this.boardNode = null;
 		this.backgroundNode = null;
@@ -144,7 +155,7 @@ export class GameBoard {
 			rngSeed: this.rngSeed,
 			rngIterationCount: this.rngIterationCount,
 			garbageRngIterationCount: this.garbageRngIterationCount,
-			busyUntil: this.busyUntil
+			busyUntil: this.busyUntil,
 		};
 	}
 
@@ -169,7 +180,9 @@ export class GameBoard {
 				this.rng.generate();
 			}
 
-			this.garbageRng = new g.XorshiftRandomGenerator(this.rngSeed + 9999);
+			this.garbageRng = new g.XorshiftRandomGenerator(
+				this.rngSeed + 9999
+			);
 			for (let i = 0; i < this.garbageRngIterationCount; i++) {
 				this.garbageRng.generate();
 			}
@@ -198,7 +211,9 @@ export class GameBoard {
 	private recalculatePosition(scene: g.Scene) {
 		const boardWidth = GameBoard.COLS * GameBoard.puyoSize;
 		const gap = this.yLocation;
-		const totalWidth = GameBoard.totalBoardsInGame * boardWidth + (GameBoard.totalBoardsInGame - 1) * gap;
+		const totalWidth =
+			GameBoard.totalBoardsInGame * boardWidth +
+			(GameBoard.totalBoardsInGame - 1) * gap;
 		const startX = (g.game.width - totalWidth) / 2;
 
 		const visualIndex = this.getVisualIndex();
@@ -208,9 +223,12 @@ export class GameBoard {
 			Array(GameBoard.COLS).fill(0)
 		);
 
-		if (this.boardNode && !this.boardNode.destroyed()) this.boardNode.destroy();
-		if (this.ghostPuyoNode && !this.ghostPuyoNode.destroyed()) this.ghostPuyoNode.destroy();
-		if (this.currentPuyoNode && !this.currentPuyoNode.destroyed()) this.currentPuyoNode.destroy();
+		if (this.boardNode && !this.boardNode.destroyed())
+			this.boardNode.destroy();
+		if (this.ghostPuyoNode && !this.ghostPuyoNode.destroyed())
+			this.ghostPuyoNode.destroy();
+		if (this.currentPuyoNode && !this.currentPuyoNode.destroyed())
+			this.currentPuyoNode.destroy();
 
 		this.boardNode = new g.E({
 			scene: scene,
@@ -246,8 +264,10 @@ export class GameBoard {
 		this.snapshotBoard = null;
 		this.renderBoard();
 
-		if (this.ghostPuyoNode && !this.ghostPuyoNode.destroyed()) this.ghostPuyoNode.destroy();
-		if (this.currentPuyoNode && !this.currentPuyoNode.destroyed()) this.currentPuyoNode.destroy();
+		if (this.ghostPuyoNode && !this.ghostPuyoNode.destroyed())
+			this.ghostPuyoNode.destroy();
+		if (this.currentPuyoNode && !this.currentPuyoNode.destroyed())
+			this.currentPuyoNode.destroy();
 
 		this.updatePuyoView();
 
@@ -285,11 +305,14 @@ export class GameBoard {
 		const scene = g.game.scene();
 		const boardWidth = GameBoard.COLS * GameBoard.puyoSize;
 		const gap = this.yLocation;
-		const totalWidth = GameBoard.totalBoardsInGame * boardWidth + (GameBoard.totalBoardsInGame - 1) * gap;
+		const totalWidth =
+			GameBoard.totalBoardsInGame * boardWidth +
+			(GameBoard.totalBoardsInGame - 1) * gap;
 		const startX = (g.game.width - totalWidth) / 2;
 		const offsetX = startX + this.getVisualIndex() * (boardWidth + gap);
 
-		if (this.backgroundNode && !this.backgroundNode.destroyed()) this.backgroundNode.destroy();
+		if (this.backgroundNode && !this.backgroundNode.destroyed())
+			this.backgroundNode.destroy();
 
 		this.backgroundNode = new g.FilledRect({
 			scene: scene,
@@ -301,7 +324,7 @@ export class GameBoard {
 			height: GameBoard.puyoSize * GameBoard.ROWS,
 			cssColor:
 				GameBoard.colorBackground[
-				this.playerIndex % GameBoard.colorBackground.length
+					this.playerIndex % GameBoard.colorBackground.length
 				],
 		});
 		Helper.insertBefore(this.rootParent.children[0], this.backgroundNode);
@@ -331,7 +354,13 @@ export class GameBoard {
 			rot: 0,
 		};
 
-		if (!this.isValid(this.currentPuyo.x, this.currentPuyo.y, this.currentPuyo.rot)) {
+		if (
+			!this.isValid(
+				this.currentPuyo.x,
+				this.currentPuyo.y,
+				this.currentPuyo.rot
+			)
+		) {
 			this.flowManager.fireAsync(
 				FlowEventName.GameOver,
 				new gameOver_sender(this.playerIndex, "blocked")
@@ -341,7 +370,7 @@ export class GameBoard {
 
 		this.nextPuyo = {
 			colorMain: nextColors.colorMain,
-			colorSub: nextColors.colorSub
+			colorSub: nextColors.colorSub,
 		};
 
 		this.rngIterationCount += 2;
@@ -408,7 +437,7 @@ export class GameBoard {
 	private calculateResolveSteps(): ResolveStep[] {
 		const steps: ResolveStep[] = [];
 		let causedClear = false;
-		let tempBoard = this.board.map(row => [...row]);
+		let tempBoard = this.board.map((row) => [...row]);
 		let chainCount = 0;
 
 		do {
@@ -459,15 +488,27 @@ export class GameBoard {
 				}
 
 				let garbageToRemove: { x: number; y: number }[] = [];
-				const dirs = [{ dx: 0, dy: 1 }, { dx: 0, dy: -1 }, { dx: 1, dy: 0 }, { dx: -1, dy: 0 }];
+				const dirs = [
+					{ dx: 0, dy: 1 },
+					{ dx: 0, dy: -1 },
+					{ dx: 1, dy: 0 },
+					{ dx: -1, dy: 0 },
+				];
 
-				toRemove.forEach(p => {
-					dirs.forEach(d => {
+				toRemove.forEach((p) => {
+					dirs.forEach((d) => {
 						const nx = p.x + d.dx;
 						const ny = p.y + d.dy;
-						if (nx >= 0 && nx < GameBoard.COLS && ny >= 0 && ny < GameBoard.ROWS) {
+						if (
+							nx >= 0 &&
+							nx < GameBoard.COLS &&
+							ny >= 0 &&
+							ny < GameBoard.ROWS
+						) {
 							if (tempBoard[ny][nx] === GameBoard.GARBAGE_ID) {
-								const alreadyAdded = garbageToRemove.some(g => g.x === nx && g.y === ny);
+								const alreadyAdded = garbageToRemove.some(
+									(g) => g.x === nx && g.y === ny
+								);
 								if (!alreadyAdded) {
 									garbageToRemove.push({ x: nx, y: ny });
 								}
@@ -482,7 +523,7 @@ export class GameBoard {
 					type: "clear",
 					matches: totalCleared,
 					score: scoreGain,
-					garbageToSend: garbageToSend
+					garbageToSend: garbageToSend,
 				});
 
 				totalCleared.forEach((p) => {
@@ -515,12 +556,20 @@ export class GameBoard {
 			const BLINK_DURATION = 40;
 			const BLINK_INTERVAL = 8;
 
-			this.busyUntil = g.game.age + (step.type === "clear" ? BLINK_DURATION + STEP_DELAY : STEP_DELAY);
+			this.busyUntil =
+				g.game.age +
+				(step.type === "clear"
+					? BLINK_DURATION + STEP_DELAY
+					: STEP_DELAY);
 
 			if (step.type === "clear") {
 				this.flowManager.fireAsync(
 					FlowEventName.AddScore,
-					new addScore_sender(this.playerIndex, step.score, step.garbageToSend)
+					new addScore_sender(
+						this.playerIndex,
+						step.score,
+						step.garbageToSend
+					)
 				);
 
 				if (!g.game.isSkipping) {
@@ -531,8 +580,10 @@ export class GameBoard {
 						this.boardNode.append(blinkSpr);
 						blinkSpr.x = p.x * GameBoard.puyoSize;
 						blinkSpr.y = p.y * GameBoard.puyoSize;
-						blinkSpr.scaleX = (GameBoard.puyoSize - 2) / blinkSpr.width;
-						blinkSpr.scaleY = (GameBoard.puyoSize - 2) / blinkSpr.height;
+						blinkSpr.scaleX =
+							(GameBoard.puyoSize - 2) / blinkSpr.width;
+						blinkSpr.scaleY =
+							(GameBoard.puyoSize - 2) / blinkSpr.height;
 						blinkSpr.modified();
 						blinkers.push(blinkSpr);
 					});
@@ -556,7 +607,6 @@ export class GameBoard {
 					visualBoard[p.y][p.x] = 0;
 				});
 				this.renderBoard(visualBoard);
-
 			} else if (step.type === "drop") {
 				this.applyGravity(visualBoard);
 				this.renderBoard(visualBoard);
@@ -686,7 +736,7 @@ export class GameBoard {
 		this.applyGravity(this.board);
 		this.renderBoard();
 		if (tempSprites.length > 0) {
-			tempSprites.forEach(s => {
+			tempSprites.forEach((s) => {
 				if (!s.destroyed()) s.destroy();
 			});
 		}
@@ -695,7 +745,8 @@ export class GameBoard {
 
 	private async animateGarbageFall(garbageCounts: number[]): Promise<g.E[]> {
 		const sprites: { sprite: g.E; targetY: number; dy: number }[] = [];
-		const activeSprites: { sprite: g.E; targetY: number; dy: number }[] = [];
+		const activeSprites: { sprite: g.E; targetY: number; dy: number }[] =
+			[];
 
 		for (let c = 0; c < GameBoard.COLS; c++) {
 			const count = garbageCounts[c];
@@ -708,13 +759,13 @@ export class GameBoard {
 			}
 
 			for (let i = 0; i < count; i++) {
-				const visualRow = (GameBoard.ROWS - 1) - stackHeight - i;
+				const visualRow = GameBoard.ROWS - 1 - stackHeight - i;
 				if (visualRow < 0) continue;
 
 				const targetY = visualRow * GameBoard.puyoSize;
 				const rand = this.garbageRng.generate();
 				this.garbageRngIterationCount++;
-				const startY = -40 - (i * 35) - (rand * 20);
+				const startY = -40 - i * 35 - rand * 20;
 
 				const spr = Helper.newSprite("/assets/garbage.png");
 				this.boardNode.append(spr);
@@ -765,7 +816,7 @@ export class GameBoard {
 
 				if (allFinished) {
 					g.game.scene().onUpdate.remove(handler);
-					resolve(sprites.map(s => s.sprite));
+					resolve(sprites.map((s) => s.sprite));
 				}
 			};
 
@@ -777,7 +828,9 @@ export class GameBoard {
 		const targetBoard = renderData || this.board;
 		const boardWidth = GameBoard.COLS * GameBoard.puyoSize;
 		const gap = this.yLocation;
-		const totalWidth = GameBoard.totalBoardsInGame * boardWidth + (GameBoard.totalBoardsInGame - 1) * gap;
+		const totalWidth =
+			GameBoard.totalBoardsInGame * boardWidth +
+			(GameBoard.totalBoardsInGame - 1) * gap;
 		const startX = (g.game.width - totalWidth) / 2;
 		const offsetX = startX + this.getVisualIndex() * (boardWidth + gap);
 

@@ -43,10 +43,17 @@ export class UIManager {
 	private soundManager: SoundManager;
 
 	private modeSelectionContainer: g.E;
-	private modeButtons: { [mode: string]: { btn: g.FilledRect, lbl: g.Label } } = {};
+	private modeButtons: {
+		[mode: string]: { btn: g.FilledRect; lbl: g.Label };
+	} = {};
 
 	private pvpLobbyContainer: g.E;
-	private pvpSlots: { bg: g.FilledRect, label: g.Label, button: g.FilledRect, btnLabel: g.Label }[] = [];
+	private pvpSlots: {
+		bg: g.FilledRect;
+		label: g.Label;
+		button: g.FilledRect;
+		btnLabel: g.Label;
+	}[] = [];
 
 	private modeLabel: g.Label;
 
@@ -55,7 +62,7 @@ export class UIManager {
 		this.soundManager = soundManager;
 		this.layoutRoot = new g.E({ scene: scene, parent: scene });
 		let bg = Helper.newSprite("/assets/background.png");
-		this.layoutRoot.append(bg)
+		this.layoutRoot.append(bg);
 
 		this.gameLayer = new g.E({ scene: scene, parent: this.layoutRoot });
 		this.uiLayer = new g.E({ scene: scene, parent: this.layoutRoot });
@@ -246,7 +253,7 @@ export class UIManager {
 			textColor: "black",
 			x: 10,
 			y: 10,
-			touchable: false
+			touchable: false,
 		});
 	}
 
@@ -271,7 +278,7 @@ export class UIManager {
 			width: width,
 			height: height,
 			touchable: true,
-			hidden: true
+			hidden: true,
 		});
 
 		this.lobbyBg = new g.FilledRect({
@@ -337,7 +344,7 @@ export class UIManager {
 			parent: this.uiLayer,
 			width: g.game.width,
 			height: g.game.height,
-			hidden: true
+			hidden: true,
 		});
 
 		new g.FilledRect({
@@ -346,7 +353,7 @@ export class UIManager {
 			width: g.game.width,
 			height: g.game.height,
 			cssColor: "black",
-			opacity: 0.8
+			opacity: 0.8,
 		});
 
 		const title = new g.Label({
@@ -358,7 +365,7 @@ export class UIManager {
 			textColor: "white",
 			width: g.game.width,
 			textAlign: "center",
-			y: 100
+			y: 100,
 		});
 
 		const modes: ("SOLO" | "NPC" | "PVP")[] = ["SOLO", "NPC", "PVP"];
@@ -371,7 +378,7 @@ export class UIManager {
 				width: 300,
 				height: 80,
 				cssColor: "white",
-				touchable: true
+				touchable: true,
 			});
 
 			const lbl = new g.Label({
@@ -383,7 +390,7 @@ export class UIManager {
 				textColor: "black",
 				width: 300,
 				textAlign: "center",
-				y: 20
+				y: 20,
 			});
 
 			this.modeButtons[mode] = { btn, lbl };
@@ -400,7 +407,7 @@ export class UIManager {
 			parent: this.uiLayer,
 			width: g.game.width,
 			height: g.game.height,
-			hidden: true
+			hidden: true,
 		});
 
 		new g.FilledRect({
@@ -409,7 +416,7 @@ export class UIManager {
 			width: g.game.width,
 			height: g.game.height,
 			cssColor: "black",
-			opacity: 0.6
+			opacity: 0.6,
 		});
 
 		const labels = ["Player 1 (You)", "Player 2"];
@@ -427,7 +434,7 @@ export class UIManager {
 				width: slotWidth,
 				height: 300,
 				cssColor: "#333",
-				opacity: 0.8
+				opacity: 0.8,
 			});
 
 			const lbl = new g.Label({
@@ -439,7 +446,7 @@ export class UIManager {
 				textColor: "white",
 				width: slotWidth,
 				textAlign: "center",
-				y: 20
+				y: 20,
 			});
 
 			const btn = new g.FilledRect({
@@ -450,7 +457,7 @@ export class UIManager {
 				width: 200,
 				height: 60,
 				cssColor: "gray",
-				touchable: false
+				touchable: false,
 			});
 
 			const btnLbl = new g.Label({
@@ -462,10 +469,15 @@ export class UIManager {
 				textColor: "black",
 				width: 200,
 				textAlign: "center",
-				y: 15
+				y: 15,
 			});
 
-			this.pvpSlots.push({ bg, label: lbl, button: btn, btnLabel: btnLbl });
+			this.pvpSlots.push({
+				bg,
+				label: lbl,
+				button: btn,
+				btnLabel: btnLbl,
+			});
 
 			btn.onPointDown.add(() => {
 				if (this.onLobbyClick) {
@@ -497,8 +509,8 @@ export class UIManager {
 	public showPvPLobby(myPIdx: number, p1Ready: boolean, p2Ready: boolean) {
 		this.pvpLobbyContainer.show();
 		this.pvpSlots.forEach((slot, i) => {
-			const isMe = (i === myPIdx);
-			const isReady = (i === 0 ? p1Ready : p2Ready);
+			const isMe = i === myPIdx;
+			const isReady = i === 0 ? p1Ready : p2Ready;
 
 			if (isMe) {
 				slot.label.text = "You";
@@ -520,7 +532,6 @@ export class UIManager {
 	public hidePvPLobby() {
 		this.pvpLobbyContainer.hide();
 	}
-
 
 	public createScoreUI() {
 		const boardWidth = GameBoard.COLS * GameBoard.puyoSize;
@@ -599,7 +610,7 @@ export class UIManager {
 			const container = new g.E({
 				scene: this.scene,
 				parent: this.uiLayer,
-				hidden: true
+				hidden: true,
 			});
 
 			const size = 30;
@@ -617,7 +628,7 @@ export class UIManager {
 				fontSize: 20,
 				textColor: "white",
 				x: size + 5,
-				y: (size - 20) / 2 - 0
+				y: (size - 20) / 2 - 0,
 			});
 
 			this.garbageContainers[i] = container;

@@ -20,10 +20,19 @@ export class UIStep extends BaseStep {
 			case FlowEventName.SelectMode:
 				const scene = g.game.scene() as any;
 				let isHost = false;
-				if (scene.syncFramework && scene.syncFramework.state && scene.syncFramework.state.players) {
+				if (
+					scene.syncFramework &&
+					scene.syncFramework.state &&
+					scene.syncFramework.state.players
+				) {
 					const p = scene.syncFramework.state.players[g.game.selfId];
 					if (p && p.pIdx === 0) isHost = true;
-					if (!p && Object.keys(scene.syncFramework.state.players).length === 0) isHost = true;
+					if (
+						!p &&
+						Object.keys(scene.syncFramework.state.players)
+							.length === 0
+					)
+						isHost = true;
 				}
 				this.uiManager.showModeSelection(isHost);
 				break;
@@ -51,8 +60,13 @@ export class UIStep extends BaseStep {
 				this.uiManager.refreshScoreLayout();
 
 				const sceneLoad = g.game.scene() as any;
-				if (sceneLoad.syncFramework && sceneLoad.syncFramework.state && sceneLoad.syncFramework.state.players) {
-					const myP = sceneLoad.syncFramework.state.players[g.game.selfId];
+				if (
+					sceneLoad.syncFramework &&
+					sceneLoad.syncFramework.state &&
+					sceneLoad.syncFramework.state.players
+				) {
+					const myP =
+						sceneLoad.syncFramework.state.players[g.game.selfId];
 					if (myP) {
 						this.uiManager.updateModeLabel(myP.mode);
 					}
@@ -78,19 +92,31 @@ export class UIStep extends BaseStep {
 						scoreSender.playerIdx,
 						board.score
 					);
-					this.uiManager.setGarbageCount(board.playerIndex, board.nuisanceQueue);
+					this.uiManager.setGarbageCount(
+						board.playerIndex,
+						board.nuisanceQueue
+					);
 
 					const currentScene = g.game.scene() as any;
-					if (currentScene.syncFramework && scoreSender.garbageToSend > 0) {
+					if (
+						currentScene.syncFramework &&
+						scoreSender.garbageToSend > 0
+					) {
 						let isMyAction = false;
 						if (board.id === g.game.selfId) isMyAction = true;
-						if (board.id === "BOT_" + g.game.selfId) isMyAction = true;
+						if (board.id === "BOT_" + g.game.selfId)
+							isMyAction = true;
 
 						if (isMyAction) {
 							const allIds = Object.keys(GameBoard.instances);
-							const enemyId = allIds.find(id => id !== board.id);
+							const enemyId = allIds.find(
+								(id) => id !== board.id
+							);
 							if (enemyId) {
-								currentScene.syncFramework.dispatch("garbage", { targetId: enemyId, amount: scoreSender.garbageToSend });
+								currentScene.syncFramework.dispatch("garbage", {
+									targetId: enemyId,
+									amount: scoreSender.garbageToSend,
+								});
 							}
 						}
 					}
@@ -99,14 +125,19 @@ export class UIStep extends BaseStep {
 
 			case FlowEventName.GameOver:
 				const currentScene = g.game.scene() as any;
-				const syncState = currentScene.syncFramework ? currentScene.syncFramework.state : null;
+				const syncState = currentScene.syncFramework
+					? currentScene.syncFramework.state
+					: null;
 
 				const goSender = getSender(eventName) as gameOver_sender;
 
 				let loserId: string = null;
 				if (goSender) {
 					for (let id in GameBoard.instances) {
-						if (GameBoard.instances[id].playerIndex === goSender.loserPlayerIdx) {
+						if (
+							GameBoard.instances[id].playerIndex ===
+							goSender.loserPlayerIdx
+						) {
 							loserId = id;
 							break;
 						}
@@ -125,7 +156,10 @@ export class UIStep extends BaseStep {
 				const myP = syncState ? syncState.players[g.game.selfId] : null;
 				if (myP) {
 					if (myP.mode === "SOLO" || myP.mode === "NPC") {
-						if (loserId !== g.game.selfId && loserId !== "BOT_" + g.game.selfId) {
+						if (
+							loserId !== g.game.selfId &&
+							loserId !== "BOT_" + g.game.selfId
+						) {
 							return;
 						}
 					}
@@ -179,7 +213,10 @@ export class UIStep extends BaseStep {
 						GameBoard.get(id).playerIndex,
 						0
 					);
-					this.uiManager.setGarbageCount(GameBoard.get(id).playerIndex, 0);
+					this.uiManager.setGarbageCount(
+						GameBoard.get(id).playerIndex,
+						0
+					);
 				}
 				break;
 			case FlowEventName.UpdateGarbageCount:
@@ -187,7 +224,10 @@ export class UIStep extends BaseStep {
 				if (uSender) {
 					const board = GameBoard.getByIndex(uSender.playerIdx);
 					if (board) {
-						this.uiManager.setGarbageCount(board.playerIndex, board.nuisanceQueue);
+						this.uiManager.setGarbageCount(
+							board.playerIndex,
+							board.nuisanceQueue
+						);
 					}
 				}
 				break;

@@ -1,5 +1,13 @@
-export type LogicCallback<TState> = (state: TState, payload: any, senderId: string) => void;
-export type ViewCallback<TState> = (payload: any, isLocal: boolean, state: TState) => void;
+export type LogicCallback<TState> = (
+	state: TState,
+	payload: any,
+	senderId: string
+) => void;
+export type ViewCallback<TState> = (
+	payload: any,
+	isLocal: boolean,
+	state: TState
+) => void;
 
 interface Handler<TState> {
 	logic: LogicCallback<TState>;
@@ -22,10 +30,14 @@ export class SyncFramework<TState> {
 		this.onSyncView = null;
 	}
 
-	register(actionType: string, logicCallback: LogicCallback<TState>, viewCallback?: ViewCallback<TState>): void {
+	register(
+		actionType: string,
+		logicCallback: LogicCallback<TState>,
+		viewCallback?: ViewCallback<TState>
+	): void {
 		this.handlers[actionType] = {
 			logic: logicCallback,
-			view: viewCallback
+			view: viewCallback,
 		};
 	}
 
@@ -37,7 +49,7 @@ export class SyncFramework<TState> {
 	dispatch(actionType: string, payload: any): void {
 		const data: ActionData = {
 			type: actionType,
-			payload: payload
+			payload: payload,
 		};
 		g.game.raiseEvent(new g.MessageEvent(data));
 	}
@@ -58,7 +70,7 @@ export class SyncFramework<TState> {
 		handler.logic(this.state, payload, senderId);
 
 		if (!g.game.isSkipping && handler.view) {
-			const isLocal = (senderId === g.game.selfId);
+			const isLocal = senderId === g.game.selfId;
 			handler.view(payload, isLocal, this.state);
 		}
 	}

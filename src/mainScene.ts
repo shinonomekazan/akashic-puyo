@@ -22,7 +22,7 @@ export interface GameState {
 			rngSeed: number;
 			mode: GameMode;
 			status: PlayerStatus;
-		}
+		};
 	};
 	boards: { [id: string]: any };
 	dropTimers: { [id: string]: number };
@@ -55,7 +55,10 @@ export class MainScene extends g.Scene {
 			if (!myP || myP.status !== "PLAYING") return;
 
 			if (ev.key === "g") {
-				this.syncFramework.dispatch("garbage", { targetId: g.game.selfId, amount: 12 });
+				this.syncFramework.dispatch("garbage", {
+					targetId: g.game.selfId,
+					amount: 12,
+				});
 				return;
 			}
 
@@ -114,11 +117,10 @@ export class MainScene extends g.Scene {
 					GameBoard.get(id).renderBoard();
 				}
 			}
-			this.refreshLobbyState(); 
+			this.refreshLobbyState();
 		});
 
-		this.syncFramework.init(this, (state) => {
-		});
+		this.syncFramework.init(this, (state) => {});
 
 		const seed = Math.floor(g.game.random.generate() * 1000000);
 		this.syncFramework.dispatch("join", { seed: seed });
@@ -152,12 +154,14 @@ export class MainScene extends g.Scene {
 				let isAuthority = false;
 
 				if (pState.mode === "SOLO") {
-					isAuthority = (id === g.game.selfId);
+					isAuthority = id === g.game.selfId;
 				} else if (pState.mode === "NPC") {
 					if (id === g.game.selfId) isAuthority = true;
-					if (pState.isBot && id.indexOf(g.game.selfId) !== -1) isAuthority = true;
+					if (pState.isBot && id.indexOf(g.game.selfId) !== -1)
+						isAuthority = true;
 				} else {
-					isAuthority = (g.game.selfId === Object.keys(statePlayers)[0]);
+					isAuthority =
+						g.game.selfId === Object.keys(statePlayers)[0];
 				}
 
 				if (!isAuthority) return;
@@ -165,7 +169,13 @@ export class MainScene extends g.Scene {
 				const board = GameBoard.get(id);
 				const playerObj = this.players[id];
 
-				if (!board || !playerObj || board.isPaused || board.isAnimating || board.busyUntil > g.game.age) {
+				if (
+					!board ||
+					!playerObj ||
+					board.isPaused ||
+					board.isAnimating ||
+					board.busyUntil > g.game.age
+				) {
 					return;
 				}
 
@@ -174,7 +184,7 @@ export class MainScene extends g.Scene {
 					if (board.nextPuyo) {
 						currentColors = {
 							colorMain: board.nextPuyo.colorMain,
-							colorSub: board.nextPuyo.colorSub
+							colorSub: board.nextPuyo.colorSub,
 						};
 					} else {
 						currentColors = board.generateRandomColors();
@@ -186,7 +196,7 @@ export class MainScene extends g.Scene {
 						pIdx: playerObj.pIdx,
 						targetId: id,
 						nextColors: nextColors,
-						currentColors: currentColors
+						currentColors: currentColors,
 					});
 					return;
 				}
@@ -198,7 +208,10 @@ export class MainScene extends g.Scene {
 				this.dropTimers[id] += 1 / g.game.fps;
 				if (this.dropTimers[id] >= this.DROP_INTERVAL) {
 					this.dropTimers[id] = 0;
-					this.syncFramework.dispatch("autoDrop", { pIdx: playerObj.pIdx, targetId: id });
+					this.syncFramework.dispatch("autoDrop", {
+						pIdx: playerObj.pIdx,
+						targetId: id,
+					});
 				}
 			});
 		});
@@ -227,7 +240,10 @@ export class MainScene extends g.Scene {
 					else if (rand < 0.8) key = "ArrowDown";
 
 					if (key) {
-						this.syncFramework.dispatch("input", { key: key, senderOverride: id });
+						this.syncFramework.dispatch("input", {
+							key: key,
+							senderOverride: id,
+						});
 					}
 				}
 			}
@@ -247,7 +263,7 @@ export class MainScene extends g.Scene {
 						rngSeed: payload.seed,
 						isBot: false,
 						mode: "NONE",
-						status: "LOBBY"
+						status: "LOBBY",
 					};
 				}
 			},
@@ -272,7 +288,7 @@ export class MainScene extends g.Scene {
 							rngSeed: Date.now(),
 							isBot: true,
 							mode: "NPC",
-							status: "LOBBY"
+							status: "LOBBY",
 						};
 					}
 				}
@@ -312,7 +328,8 @@ export class MainScene extends g.Scene {
 						p.status = "PLAYING";
 						if (payload.mode === "NPC") {
 							const botId = "BOT_" + senderId;
-							if (state.players[botId]) state.players[botId].status = "PLAYING";
+							if (state.players[botId])
+								state.players[botId].status = "PLAYING";
 						}
 					}
 				}
@@ -325,17 +342,32 @@ export class MainScene extends g.Scene {
 					if (myP.mode === "SOLO") {
 						this.startLocalGame([g.game.selfId]);
 					} else if (myP.mode === "NPC") {
-						this.startLocalGame([g.game.selfId, "BOT_" + g.game.selfId]);
+						this.startLocalGame([
+							g.game.selfId,
+							"BOT_" + g.game.selfId,
+						]);
 					} else if (myP.mode === "PVP") {
-						const pvpPlayers = Object.values(state.players).filter(p => p.mode === "PVP");
-						if (pvpPlayers.length >= 2 && pvpPlayers.every(p => p.ready)) {
+						const pvpPlayers = Object.values(state.players).filter(
+							(p) => p.mode === "PVP"
+						);
+						if (
+							pvpPlayers.length >= 2 &&
+							pvpPlayers.every((p) => p.ready)
+						) {
 						}
 					}
 				} else {
 					if (myP.mode === "PVP") {
-						const pvpPlayers = Object.values(state.players).filter(p => p.mode === "PVP");
-						if (pvpPlayers.length >= 2 && pvpPlayers.every(p => p.ready)) {
-							const hostPlayer = pvpPlayers.find(p => p.pIdx === 0) || pvpPlayers[0];
+						const pvpPlayers = Object.values(state.players).filter(
+							(p) => p.mode === "PVP"
+						);
+						if (
+							pvpPlayers.length >= 2 &&
+							pvpPlayers.every((p) => p.ready)
+						) {
+							const hostPlayer =
+								pvpPlayers.find((p) => p.pIdx === 0) ||
+								pvpPlayers[0];
 							if (hostPlayer.id === g.game.selfId) {
 								this.syncFramework.dispatch("setPlaying", {});
 							}
@@ -351,7 +383,7 @@ export class MainScene extends g.Scene {
 		this.syncFramework.register(
 			"setPlaying",
 			(state, _, senderId) => {
-				Object.keys(state.players).forEach(id => {
+				Object.keys(state.players).forEach((id) => {
 					if (state.players[id].mode === "PVP") {
 						state.players[id].status = "PLAYING";
 					}
@@ -360,7 +392,9 @@ export class MainScene extends g.Scene {
 			(_, __, state) => {
 				const myP = state.players[g.game.selfId];
 				if (myP && myP.mode === "PVP" && myP.status === "PLAYING") {
-					const pvpIds = Object.keys(state.players).filter(id => state.players[id].mode === "PVP");
+					const pvpIds = Object.keys(state.players).filter(
+						(id) => state.players[id].mode === "PVP"
+					);
 					this.startLocalGame(pvpIds);
 				}
 			}
@@ -374,17 +408,26 @@ export class MainScene extends g.Scene {
 					loser.status = "GAMEOVER";
 
 					if (loser.mode === "NPC") {
-						const humanId = loser.isBot ? loser.id.replace("BOT_", "") : loser.id;
+						const humanId = loser.isBot
+							? loser.id.replace("BOT_", "")
+							: loser.id;
 						const botId = "BOT_" + humanId;
 
-						if (state.players[humanId]) state.players[humanId].status = "GAMEOVER";
-						if (state.players[botId]) state.players[botId].status = "GAMEOVER";
+						if (state.players[humanId])
+							state.players[humanId].status = "GAMEOVER";
+						if (state.players[botId])
+							state.players[botId].status = "GAMEOVER";
 					}
 				}
 
-				if (state.players[senderId] && state.players[senderId].mode === "PVP") {
-					const pvpPlayers = Object.values(state.players).filter(p => p.mode === "PVP");
-					pvpPlayers.forEach(p => p.status = "GAMEOVER");
+				if (
+					state.players[senderId] &&
+					state.players[senderId].mode === "PVP"
+				) {
+					const pvpPlayers = Object.values(state.players).filter(
+						(p) => p.mode === "PVP"
+					);
+					pvpPlayers.forEach((p) => (p.status = "GAMEOVER"));
 				}
 			},
 			(payload, isLocal, state) => {
@@ -393,12 +436,18 @@ export class MainScene extends g.Scene {
 
 				const loserId = payload.loserIdx;
 				if (loserId === g.game.selfId) {
-					this.flowManager.fireAsync(FlowEventName.GameOver, new selectMode_sender(this.localMode as any));
+					this.flowManager.fireAsync(
+						FlowEventName.GameOver,
+						new selectMode_sender(this.localMode as any)
+					);
 					return;
 				}
 
 				if (myP.mode === "PVP" && myP.status === "GAMEOVER") {
-					this.flowManager.fireAsync(FlowEventName.GameOver, new selectMode_sender(this.localMode as any));
+					this.flowManager.fireAsync(
+						FlowEventName.GameOver,
+						new selectMode_sender(this.localMode as any)
+					);
 				}
 			}
 		);
@@ -414,10 +463,12 @@ export class MainScene extends g.Scene {
 					targets.push(senderId);
 					if (sender.mode === "NPC") targets.push("BOT_" + senderId);
 				} else if (sender.mode === "PVP") {
-					Object.values(state.players).filter(p => p.mode === "PVP").forEach(p => targets.push(p.id));
+					Object.values(state.players)
+						.filter((p) => p.mode === "PVP")
+						.forEach((p) => targets.push(p.id));
 				}
 
-				targets.forEach(tid => {
+				targets.forEach((tid) => {
 					if (state.players[tid]) {
 						const p = state.players[tid];
 						p.status = "LOBBY";
@@ -456,7 +507,11 @@ export class MainScene extends g.Scene {
 				const senderId = payload._senderId;
 				if (!this.players[senderId]) return;
 
-				if (state.players[senderId] && state.players[senderId].status === "GAMEOVER") return;
+				if (
+					state.players[senderId] &&
+					state.players[senderId].status === "GAMEOVER"
+				)
+					return;
 
 				const board = GameBoard.get(senderId);
 				if (board && board.busyUntil > g.game.age) return;
@@ -466,14 +521,22 @@ export class MainScene extends g.Scene {
 
 		this.syncFramework.register(
 			"spawn",
-			(state, payload) => { },
+			(state, payload) => {},
 			(payload, isLocal, state) => {
 				const targetId = payload.targetId;
-				if (state.players[targetId] && state.players[targetId].status === "GAMEOVER") return;
+				if (
+					state.players[targetId] &&
+					state.players[targetId].status === "GAMEOVER"
+				)
+					return;
 
 				const myP = state.players[g.game.selfId];
 				if (myP && (myP.mode === "SOLO" || myP.mode === "NPC")) {
-					if (targetId !== g.game.selfId && targetId !== "BOT_" + g.game.selfId) return;
+					if (
+						targetId !== g.game.selfId &&
+						targetId !== "BOT_" + g.game.selfId
+					)
+						return;
 				}
 
 				const board = GameBoard.get(targetId);
@@ -492,19 +555,34 @@ export class MainScene extends g.Scene {
 			},
 			(payload, isLocal, state) => {
 				const targetId = payload.targetId;
-				if (state.players[targetId] && state.players[targetId].status === "GAMEOVER") return;
+				if (
+					state.players[targetId] &&
+					state.players[targetId].status === "GAMEOVER"
+				)
+					return;
 
 				const myP = state.players[g.game.selfId];
 				if (myP && (myP.mode === "SOLO" || myP.mode === "NPC")) {
-					if (targetId !== g.game.selfId && targetId !== "BOT_" + g.game.selfId) return;
+					if (
+						targetId !== g.game.selfId &&
+						targetId !== "BOT_" + g.game.selfId
+					)
+						return;
 				}
 
-				if (this.dropTimers[targetId] !== undefined) this.dropTimers[targetId] = 0;
+				if (this.dropTimers[targetId] !== undefined)
+					this.dropTimers[targetId] = 0;
 
 				const board = GameBoard.get(targetId);
 				if (!board || !board.currentPuyo) return;
 
-				if (board.isValid(board.currentPuyo.x, board.currentPuyo.y + 1, board.currentPuyo.rot)) {
+				if (
+					board.isValid(
+						board.currentPuyo.x,
+						board.currentPuyo.y + 1,
+						board.currentPuyo.rot
+					)
+				) {
 					board.currentPuyo.y += 1;
 					board.updatePuyoView();
 				} else {
@@ -518,14 +596,21 @@ export class MainScene extends g.Scene {
 
 		this.syncFramework.register(
 			"garbage",
-			(state, payload) => { },
+			(state, payload) => {},
 			(payload, isLocal, state) => {
 				const targetId = payload.targetId;
-				if (state.players[targetId] && state.players[targetId].status === "GAMEOVER") return;
+				if (
+					state.players[targetId] &&
+					state.players[targetId].status === "GAMEOVER"
+				)
+					return;
 				const board = GameBoard.get(targetId);
 				const amount = payload.amount || 1;
 				if (board) {
-					this.flowManager.fireAsync(FlowEventName.AddGarbage, new addGarbage_sender(board.playerIndex, amount));
+					this.flowManager.fireAsync(
+						FlowEventName.AddGarbage,
+						new addGarbage_sender(board.playerIndex, amount)
+					);
 				}
 			}
 		);
@@ -575,7 +660,7 @@ export class MainScene extends g.Scene {
 		if (loserId && this.syncFramework) {
 			this.syncFramework.dispatch("gameOver", {
 				loserIdx: loserId,
-				reason: reason
+				reason: reason,
 			});
 		}
 	}
@@ -585,22 +670,32 @@ export class MainScene extends g.Scene {
 		if (!myP || myP.status === "PLAYING") return;
 
 		if (myP.mode === "NONE") {
-			this.flowManager.fireAsync(FlowEventName.SelectMode, new selectMode_sender("SOLO"));
+			this.flowManager.fireAsync(
+				FlowEventName.SelectMode,
+				new selectMode_sender("SOLO")
+			);
 		} else if (myP.mode === "PVP") {
 			const allP = this.syncFramework.state.players;
-			const pvpPlayers = Object.values(allP).filter(p => p.mode === "PVP");
+			const pvpPlayers = Object.values(allP).filter(
+				(p) => p.mode === "PVP"
+			);
 			const p1 = pvpPlayers[0];
 			const p2 = pvpPlayers[1];
 
 			this.uiManager.showPvPLobby(
-				(p1 && p1.id === g.game.selfId) ? 0 : 1,
+				p1 && p1.id === g.game.selfId ? 0 : 1,
 				p1 ? p1.ready : false,
 				p2 ? p2.ready : false
 			);
 		}
 	}
 
-	private createPlayer(id: string, visualIndex: number, rngSeed?: number, isBot: boolean = false) {
+	private createPlayer(
+		id: string,
+		visualIndex: number,
+		rngSeed?: number,
+		isBot: boolean = false
+	) {
 		if (this.players[id]) return this.players[id];
 
 		GameBoard.createPlayerBoard(
@@ -644,7 +739,7 @@ export class MainScene extends g.Scene {
 
 	private handleGameplayMessage(player: Player, data: any) {
 		if (data.key) {
-			player.handleInput(data.key, () => { });
+			player.handleInput(data.key, () => {});
 		}
 	}
 }
