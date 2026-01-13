@@ -5,7 +5,7 @@ import { FlowCreator } from "./flowCreator";
 import { GameBoard } from "./gameBoard";
 import { Player } from "./Player";
 import { UIManager } from "./uiManager";
-import { addGarbage_sender, move_sender, selectMode_sender } from "./sender";
+import { addGarbage_sender, gameLoad_sender, move_sender, selectMode_sender } from "./sender";
 import { SoundManager } from "./soundManager";
 import { SyncFramework } from "./SyncFramework";
 
@@ -28,6 +28,10 @@ export interface GameState {
 	dropTimers: { [id: string]: number };
 }
 
+export interface MainSceneParameterObject extends g.SceneParameterObject {
+	snapshot?: any;
+}
+
 export class MainScene extends g.Scene {
 	flowManager: FlowManager;
 	flowCreator: FlowCreator;
@@ -44,10 +48,12 @@ export class MainScene extends g.Scene {
 
 	private onKeyDownHandler: (ev: any) => void;
 	private localMode: GameMode = "NONE";
+	private snapshot: any;
 
-	constructor(param: g.SceneParameterObject) {
+	constructor(param: MainSceneParameterObject) {
 		param.assetPaths = assetPaths;
 		super(param);
+		this.snapshot = param.snapshot;
 		this.flowManager = new FlowManager();
 
 		this.onKeyDownHandler = (ev: any) => {
@@ -71,15 +77,6 @@ export class MainScene extends g.Scene {
 
 	private onGameLoad() {
 		GameBoard.instances = {};
-
-		const initialState: GameState = {
-			players: {},
-			boards: {},
-			dropTimers: {},
-		};
-		this.syncFramework = new SyncFramework<GameState>(initialState);
-
-		this.registerSyncActions();
 
 		this.soundManager = new SoundManager(this);
 		this.uiManager = new UIManager(this, this.soundManager);
@@ -120,10 +117,25 @@ export class MainScene extends g.Scene {
 			this.refreshLobbyState();
 		});
 
-		this.syncFramework.init(this, (state) => {});
+		if (this.snapshot) {
+			console.log('this snapshot ', this.snapshot);
+			this.syncFramework = new SyncFramework<GameState>(this.snapshot);
+			this.registerSyncActions();
+			this.syncFramework.init(this, (state) => { });
+			this.restoreFromSnapshot();
+		} else {
+			const initialState: GameState = {
+				players: {},
+				boards: {},
+				dropTimers: {},
+			};
+			this.syncFramework = new SyncFramework<GameState>(initialState);
+			this.registerSyncActions();
+			this.syncFramework.init(this, (state) => { });
 
-		const seed = Math.floor(g.game.random.generate() * 1000000);
-		this.syncFramework.dispatch("join", { seed: seed });
+			const seed = Math.floor(g.game.random.generate() * 1000000);
+			this.syncFramework.dispatch("join", { seed: seed });
+		}
 
 		if (typeof window !== "undefined") {
 			window.addEventListener("keydown", this.onKeyDownHandler);
@@ -215,6 +227,117 @@ export class MainScene extends g.Scene {
 				}
 			});
 		});
+		//
+		let sender = new gameLoad_sender();
+		sender.syncFramework = this.syncFramework;
+		this.flowManager.fireAsync(FlowEventName.GameLoad, sender);
+	}
+
+	private restoreFromSnapshot() {
+		let currentState: any = this.syncFramework.state;
+		if (Array.isArray(currentState)) {
+			const boardList = currentState;
+			const reconstructedState: GameState = {
+				players: {},
+				boards: {},
+				dropTimers: {}
+			};
+			let inferredMode: GameMode = "SOLO";
+			if (boardList.length > 1) {
+				const hasBot = boardList.some((b: any) => b.id && typeof b.id === "string" && b.id.indexOf("BOT") !== -1);
+				inferredMode = hasBot ? "NPC" : "PVP";
+			}
+			boardList.forEach((boardData: any) => {
+				const pId = boardData.id;
+				reconstructedState.boards[pId] = boardData;
+				reconstructedState.players[pId] = {
+					id: pId,
+					pIdx: boardData.playerIndex,
+					ready: true,
+					isBot: (typeof pId === "string" && pId.indexOf("BOT") !== -1),
+					rngSeed: boardData.rngSeed,
+					mode: inferredMode,
+					status: "PLAYING" 
+				};
+			});
+
+			this.syncFramework.state = reconstructedState;
+			currentState = reconstructedState;
+		}
+
+		const state = this.syncFramework.state;
+
+		if (!state.players) state.players = {};
+		if (!state.boards) state.boards = {};
+		if (!state.dropTimers) state.dropTimers = {};
+
+		console.log("Restoring state:", state);
+		this.dropTimers = state.dropTimers;
+
+		const myP = state.players[g.game.selfId];
+
+		if (myP) {
+			this.localMode = myP.mode;
+		} else {
+			const firstPId = Object.keys(state.players)[0];
+			if (firstPId) {
+				this.localMode = state.players[firstPId].mode;
+			}
+		}
+
+		if (this.localMode === "SOLO") {
+			GameBoard.totalBoardsInGame = 1;
+		} else if (this.localMode === "NPC" || this.localMode === "PVP") {
+			GameBoard.totalBoardsInGame = 2;
+		}
+
+		Object.keys(state.players).forEach((id) => {
+			const pState = state.players[id];
+			const player = this.createPlayer(id, pState.pIdx, pState.rngSeed, pState.isBot);
+			player.initFromSnapshot(pState);
+
+			if (state.boards[id]) {
+				const board = GameBoard.get(id);
+				board.initFromSnapshot(state.boards[id]);
+
+				this.uiManager.updateScore(board.playerIndex, board.score);
+				this.uiManager.setGarbageCount(board.playerIndex, board.nuisanceQueue);
+
+				if (board.nextPuyo) {
+					this.uiManager.updateNextPuyo(
+						board.playerIndex,
+						board.nextPuyo.colorMain,
+						board.nextPuyo.colorSub
+					);
+				}
+			}
+		});
+
+		if (myP) {
+			this.uiManager.updateModeLabel(myP.mode);
+			if (myP.status === "PLAYING") {
+				this.uiManager.hideModeSelection();
+				this.uiManager.hidePvPLobby();
+				this.uiManager.showScoreUI();
+				this.uiManager.refreshScoreLayout();
+			} else if (myP.status === "LOBBY") {
+				this.refreshLobbyState();
+			} else if (myP.status === "GAMEOVER") {
+				let reason = "unknown";
+				this.setGameOver(myP.pIdx, reason);
+			}
+		} else {
+			const hasPlayers = Object.keys(state.players).length > 0;
+			if (hasPlayers) {
+				this.uiManager.hideModeSelection();
+				this.uiManager.hidePvPLobby();
+				this.uiManager.showScoreUI();
+				this.uiManager.refreshScoreLayout();
+			} else {
+				const isHost = Object.keys(state.players).length === 0;
+				this.uiManager.showModeSelection(isHost);
+			}
+		}
 	}
 
 	private updateBotLogic() {
@@ -521,7 +644,7 @@ export class MainScene extends g.Scene {
 
 		this.syncFramework.register(
 			"spawn",
-			(state, payload) => {},
+			(state, payload) => { },
 			(payload, isLocal, state) => {
 				const targetId = payload.targetId;
 				if (
@@ -596,7 +719,7 @@ export class MainScene extends g.Scene {
 
 		this.syncFramework.register(
 			"garbage",
-			(state, payload) => {},
+			(state, payload) => { },
 			(payload, isLocal, state) => {
 				const targetId = payload.targetId;
 				if (
@@ -613,6 +736,14 @@ export class MainScene extends g.Scene {
 					);
 				}
 			}
+		);
+		this.syncFramework.register(
+			"startgame",
+			(state, payload, senderId) => {
+				let sender = new gameLoad_sender();
+				sender.syncFramework = this.syncFramework;
+				this.flowManager.fireAsync(FlowEventName.GameLoad, sender);
+			},
 		);
 	}
 
@@ -734,12 +865,12 @@ export class MainScene extends g.Scene {
 		});
 
 		this.uiManager.refreshScoreLayout();
-		this.flowManager.fireAsync(FlowEventName.GameLoad);
+		this.syncFramework.dispatch("startgame", {});
 	}
 
 	private handleGameplayMessage(player: Player, data: any) {
 		if (data.key) {
-			player.handleInput(data.key, () => {});
+			player.handleInput(data.key, () => { });
 		}
 	}
 }

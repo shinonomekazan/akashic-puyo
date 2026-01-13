@@ -7,6 +7,7 @@ import { UIStep } from "./uiSteps";
 import { MainScene } from "./mainScene";
 import { SoundManager } from "./soundManager";
 import { SoundStep } from "./soundStep";
+import { SaveStep } from "./saveStep";
 
 export class FlowCreator {
 	constructor(
@@ -19,9 +20,10 @@ export class FlowCreator {
 		const uiStep = new UIStep(uiManager);
 		const gameStateStep = new GameStateStep(mainScene);
 		const transStep = new TransStep();
+		const saveStep = new SaveStep();
 
 		manager.addFlow(
-			new Flow(FlowEventName.GameLoad, [uiStep, gameStateStep])
+			new Flow(FlowEventName.GameLoad, [uiStep, gameStateStep, saveStep])
 		);
 
 		manager.addFlow(new Flow(FlowEventName.UpdateLobbyUI, [uiStep]));
@@ -32,13 +34,17 @@ export class FlowCreator {
 			new Flow(FlowEventName.UpdateNextPuyo, [uiStep, gameStateStep])
 		);
 
-		manager.addFlow(new Flow(FlowEventName.Move, [soundStep, transStep]));
-		manager.addFlow(new Flow(FlowEventName.Move, [soundStep, transStep]));
+		manager.addFlow(
+			new Flow(FlowEventName.Move, [soundStep, transStep, saveStep])
+		);
 
-		manager.addFlow(new Flow(FlowEventName.Rotate, [soundStep, transStep]));
-		manager.addFlow(new Flow(FlowEventName.Rotate, [soundStep, transStep]));
+		manager.addFlow(
+			new Flow(FlowEventName.Rotate, [soundStep, transStep, saveStep])
+		);
 
-		manager.addFlow(new Flow(FlowEventName.AddScore, [soundStep, uiStep]));
+		manager.addFlow(
+			new Flow(FlowEventName.AddScore, [soundStep, uiStep, saveStep])
+		);
 
 		manager.addFlow(
 			new Flow(FlowEventName.GameOver, [soundStep, gameStateStep, uiStep])

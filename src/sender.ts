@@ -1,6 +1,8 @@
 import { FlowManager } from "./flow/flowManager";
 import { FlowEventName } from "./flow/eventName";
 import { Vec2Like } from "@akashic-extension/collision-js";
+import { SyncFramework } from "./SyncFramework";
+import { GameState } from "./mainScene";
 var senders: Map<FlowEventName, object>;
 export function initialSender() {
 	senders = new Map<FlowEventName, object>();
@@ -13,6 +15,9 @@ export function getSender(eventName?: FlowEventName): any {
 		return senders.get(eventName);
 	}
 	return senders.get(FlowManager.eventName);
+}
+export class gameLoad_sender {
+	syncFramework: SyncFramework<GameState>;
 }
 export class client_sender {
 	constructor(playerIdx: number) {
