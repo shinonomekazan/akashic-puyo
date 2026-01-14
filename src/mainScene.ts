@@ -226,11 +226,7 @@ export class MainScene extends g.Scene {
 					});
 				}
 			});
-		});
-		//
-		let sender = new gameLoad_sender();
-		sender.syncFramework = this.syncFramework;
-		this.flowManager.fireAsync(FlowEventName.GameLoad, sender);
+		});		
 	}
 
 	private restoreFromSnapshot() {
@@ -263,6 +259,7 @@ export class MainScene extends g.Scene {
 
 			this.syncFramework.state = reconstructedState;
 			currentState = reconstructedState;
+			this.FireGameLoad();
 		}
 
 		const state = this.syncFramework.state;
@@ -740,11 +737,14 @@ export class MainScene extends g.Scene {
 		this.syncFramework.register(
 			"startgame",
 			(state, payload, senderId) => {
-				let sender = new gameLoad_sender();
-				sender.syncFramework = this.syncFramework;
-				this.flowManager.fireAsync(FlowEventName.GameLoad, sender);
+				this.FireGameLoad();
 			},
 		);
+	}
+	private FireGameLoad() {
+		let sender = new gameLoad_sender();
+		sender.syncFramework = this.syncFramework;
+		this.flowManager.fireAsync(FlowEventName.GameLoad, sender);
 	}
 
 	private handleLocalReset() {
