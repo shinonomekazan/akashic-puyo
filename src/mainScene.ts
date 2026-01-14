@@ -79,6 +79,7 @@ export class MainScene extends g.Scene {
 	}
 
 	private onGameLoad() {
+		console.log('g.game.playId =  ', g.game.playId, ", player id = ", g.game.selfId);
 		GameBoard.instances = {};
 
 		this.layerBackground = new g.E({ scene: this });
@@ -134,7 +135,6 @@ export class MainScene extends g.Scene {
 		});
 
 		if (this.snapshot) {
-			console.log('this snapshot ', this.snapshot);
 			this.syncFramework = new SyncFramework<GameState>(this.snapshot);
 			this.registerSyncActions();
 			this.syncFramework.init(this, (state) => { });
@@ -336,12 +336,16 @@ export class MainScene extends g.Scene {
 			} else if (myP.status === "LOBBY") {
 				this.refreshLobbyState();
 			} else if (myP.status === "GAMEOVER") {
-				let reason = "unknown";
-				this.setGameOver(myP.pIdx, reason);
+				myP.status = "LOBBY";
+				myP.mode = "NONE";
+				myP.ready = false;
+				this.handleLocalReset();
 			}
 		} else {
 			const hasPlayers = Object.keys(state.players).length > 0;
-			if (hasPlayers) {
+			const isGameOver = Object.keys(state.players).some(key => state.players[key].status === "GAMEOVER");
+
+			if (hasPlayers && !isGameOver) {
 				this.uiManager.hideModeSelection();
 				this.uiManager.hidePvPLobby();
 				this.uiManager.showScoreUI();

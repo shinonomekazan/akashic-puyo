@@ -56,6 +56,8 @@ export class UIManager {
 	}[] = [];
 
 	private modeLabel: g.Label;
+	private roomLabel: g.Label;
+	private playLabel: g.Label;
 
 	constructor(scene: g.Scene, soundManager?: SoundManager) {
 		this.scene = scene;
@@ -255,6 +257,29 @@ export class UIManager {
 			y: 10,
 			touchable: false,
 		});
+		this.playLabel = new g.Label({
+			scene: this.scene,
+			parent: this.uiLayer,
+			font: globalThis.font,
+			text: "",
+			fontSize: 16,
+			textColor: "black",
+			x: 10,
+			y: 30,
+			touchable: false,
+		});
+		this.roomLabel = new g.Label({
+			scene: this.scene,
+			parent: this.uiLayer,
+			font: globalThis.font,
+			text: "",
+			fontSize: 16,
+			textColor: "black",
+			x: 10,
+			y: 50,
+			touchable: false,
+		});
+
 	}
 
 	public updateModeLabel(mode: string) {
@@ -263,7 +288,11 @@ export class UIManager {
 		} else {
 			this.modeLabel.text = "MODE: " + mode;
 		}
+		this.playLabel.text = "PLAYID: " + g.game.selfId;
+		this.roomLabel.text = "ROOM ID: " + g.game.playId;
 		this.modeLabel.invalidate();
+		this.playLabel.invalidate();
+		this.roomLabel.invalidate();
 	}
 
 	private createLobbyUI() {
@@ -904,6 +933,7 @@ export class UIManager {
 
 		this.gameOverContainer.show();
 		this.controllerLayer.hide();
+		g.game.scene().append(this.uiLayer);
 	}
 
 	public hideGameOverUI() {
