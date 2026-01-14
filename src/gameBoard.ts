@@ -51,7 +51,8 @@ export class GameBoard {
 	public busyUntil: number = 0;
 	private snapshotBoard: number[][] = null;
 
-	private rootParent: g.E;
+	private parentBackground: g.E;
+	private parentGame: g.E;
 	private backgroundNode: g.FilledRect = null;
 	private readonly yLocation: number = 80;
 
@@ -90,7 +91,8 @@ export class GameBoard {
 		id: string,
 		playerIndex: number,
 		scene: g.Scene,
-		parent: g.E,
+		parentBg: g.E,
+		parentGame: g.E,
 		flowManager: FlowManager,
 		forceSeed?: number
 	): GameBoard {
@@ -110,7 +112,7 @@ export class GameBoard {
 		const rng = new g.XorshiftRandomGenerator(rngSeed);
 		const state = new GameBoard(id, playerIndex, rng, flowManager, rngSeed);
 		this.instances[id] = state;
-		state.init(scene, parent);
+		state.init(scene, parentBg, parentGame);
 		return state;
 	}
 
@@ -203,8 +205,9 @@ export class GameBoard {
 		return (this.playerIndex - localPlayerIndex + 2) % 2;
 	}
 
-	public init(scene: g.Scene, parent: g.E) {
-		this.rootParent = parent;
+	public init(scene: g.Scene, parentBg: g.E, parentGame: g.E) {
+		this.parentBackground = parentBg;
+		this.parentGame = parentGame;
 		this.recalculatePosition(scene);
 	}
 
@@ -232,19 +235,19 @@ export class GameBoard {
 
 		this.boardNode = new g.E({
 			scene: scene,
-			parent: this.rootParent,
+			parent: this.parentGame,
 			x: offsetX,
 			y: this.yLocation,
 		});
 		this.ghostPuyoNode = new g.E({
 			scene: scene,
-			parent: this.rootParent,
+			parent: this.parentGame,
 			x: offsetX,
 			y: this.yLocation,
 		});
 		this.currentPuyoNode = new g.E({
 			scene: scene,
-			parent: this.rootParent,
+			parent: this.parentGame,
 			x: offsetX,
 			y: this.yLocation,
 		});
@@ -316,7 +319,7 @@ export class GameBoard {
 
 		this.backgroundNode = new g.FilledRect({
 			scene: scene,
-			parent: this.rootParent,
+			parent: this.parentBackground,
 			x: offsetX,
 			y: this.yLocation,
 			opacity: 0.6,
@@ -324,10 +327,9 @@ export class GameBoard {
 			height: GameBoard.puyoSize * GameBoard.ROWS,
 			cssColor:
 				GameBoard.colorBackground[
-					this.playerIndex % GameBoard.colorBackground.length
+				this.playerIndex % GameBoard.colorBackground.length
 				],
 		});
-		Helper.insertBefore(this.rootParent.children[0], this.backgroundNode);
 	}
 
 	public generateRandomColors(): { colorMain: number; colorSub: number } {
@@ -839,7 +841,7 @@ export class GameBoard {
 
 		this.boardNode = new g.E({
 			scene: g.game.scene(),
-			parent: this.rootParent,
+			parent: this.parentGame,
 			x: offsetX,
 			y: this.yLocation,
 		});

@@ -39,6 +39,9 @@ export class MainScene extends g.Scene {
 	soundManager: SoundManager;
 	syncFramework: SyncFramework<GameState>;
 
+	public layerBackground: g.E;
+	public layerGame: g.E;
+
 	private dropTimers: { [id: string]: number } = {};
 	private botActionTimer: number = 0;
 	private readonly DROP_INTERVAL = 1.0;
@@ -78,8 +81,21 @@ export class MainScene extends g.Scene {
 	private onGameLoad() {
 		GameBoard.instances = {};
 
+		this.layerBackground = new g.E({ scene: this });
+		this.append(this.layerBackground);
+
+		this.layerGame = new g.E({ scene: this });
+		this.append(this.layerGame);
+
 		this.soundManager = new SoundManager(this);
+
 		this.uiManager = new UIManager(this, this.soundManager);
+
+		if ((this.uiManager as any).layoutRoot) {
+			(this.uiManager as any).layoutRoot.remove();
+			this.layerBackground.append((this.uiManager as any).layoutRoot);
+		}
+
 		this.uiManager.onControlClick.add((key) => {
 			const myP = this.syncFramework?.state.players[g.game.selfId];
 			if (!myP || myP.status !== "PLAYING") return;
@@ -226,7 +242,7 @@ export class MainScene extends g.Scene {
 					});
 				}
 			});
-		});		
+		});
 	}
 
 	private restoreFromSnapshot() {
@@ -253,7 +269,7 @@ export class MainScene extends g.Scene {
 					isBot: (typeof pId === "string" && pId.indexOf("BOT") !== -1),
 					rngSeed: boardData.rngSeed,
 					mode: inferredMode,
-					status: "PLAYING" 
+					status: "PLAYING"
 				};
 			});
 
@@ -833,7 +849,8 @@ export class MainScene extends g.Scene {
 			id,
 			visualIndex,
 			this,
-			this.uiManager.gameLayer,
+			this.layerBackground,
+			this.layerGame,
 			this.flowManager,
 			rngSeed
 		);
