@@ -1,8 +1,9 @@
-import { Scene } from "@akashic/akashic-engine";
-import { TestScene } from "./testScene";
-import { MainScene } from "./mainScene";
+import { clientScene } from "./flow/clientScene";
+import { FlowManager } from "./flow/flowManager";
+import { serverScene } from "./server/serverScene";
 
 declare global {
+	var flowManager: FlowManager;
 	var font: g.DynamicFont;
 	var gameLayer: g.E;
 	var debugLayer: g.E;
@@ -20,17 +21,30 @@ async function main(param: g.GameMainParameterObject): Promise<void> {
 		fontWeight: "bold",
 	});
 
-	let testScene = new TestScene({
-		game: g.game,
-		name: "testscene",
-	});
+	//let testScene = new TestLobbyScene({
+	//	game: g.game,
+	//	name: "testscene",
+	//});
+	//g.game.pushScene(testScene);
 
-	let mainScene = new MainScene({
-		game: g.game,
-		name: "main scene",
-		snapshot: param.snapshot
-	});
-
-	g.game.pushScene(mainScene);
+	//let lobbySync = new lobbySyncClientTest({
+	//	game: g.game,
+	//	name: "lobbySync",
+	//});
+	//g.game.pushScene(lobbySync);
+	let scene: g.Scene;
+	if (g.game.isActiveInstance()) {
+		scene = new serverScene({
+			game: g.game,
+			name: "server scene",
+		});
+	} else {
+		scene = new clientScene({
+			game: g.game,
+			name: "client scene",
+			snapshot: param.snapshot
+		});
+	}
+	g.game.pushScene(scene);
 }
 export = main;

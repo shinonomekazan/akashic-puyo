@@ -103,9 +103,22 @@ export class Helper {
 			tw.scaleTo(curScale, curScale, time);
 		});
 	}
+	static async waitUntil(
+		condition: () => boolean | Promise<boolean>,
+		checkInterval: number = 100,
+		timeout?: number
+	): Promise<void> {
+		const startTime = Date.now();
+		while (!(await condition())) {
+			if (timeout && Date.now() - startTime > timeout) {
+				throw new Error("waitUntil: timeout");
+			}
+			await new Promise((resolve) => setTimeout(resolve, checkInterval));
+		}
+	}
 	static waitAsync(time: number) {
 		return new Promise((resolve) => {
-			setTimeout(() => {
+			g.game.scene().setTimeout(() => {
 				resolve(undefined);
 			}, time);
 		});

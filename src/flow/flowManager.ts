@@ -1,8 +1,13 @@
 import { BaseStep, Flow, StepFireDebug } from "./step";
 import { FlowEventName } from "./eventName";
 import { Helper } from "../helper";
-import { initialSender, setSender } from "../sender";
+import { initialSender, setSender } from "./sender";
+
 export class FlowManager {
+	public static eventName: FlowEventName;
+	public flows: Flow[] = [];
+	public currentFlows: Flow[] = [];
+
 	public constructor() {
 		initialSender();
 		g.game.scene().onUpdate.add(() => {
@@ -15,10 +20,8 @@ export class FlowManager {
 			}
 		});
 	}
-	public static eventName: FlowEventName;
-	public flows: Flow[] = [];
-	public currentFlows: Flow[] = [];
-	ativeDebug() {
+
+	public ativeDebug() {
 		if (globalThis.debugMode == false) {
 			return;
 		}
@@ -43,17 +46,14 @@ export class FlowManager {
 			label.y = y;
 			label.angle = -60;
 			label.modified();
-			//
 			let xlocalStep = 100;
 			flow.steps.forEach((step) => {
-				//lab
 				let lab = Helper.newLable(step.constructor.name);
 				lab.fontSize = 15;
 				lab.angle = -15;
 				lab.x = xlocalStep;
 				lab.y = y;
 				parent.append(lab);
-				//fire
 				let spr = Helper.newSprite("/assets/fire.png");
 				spr.anchorY = 1;
 				spr.width = 30;
@@ -63,7 +63,6 @@ export class FlowManager {
 				spr.y = y;
 				spr.modified();
 				parent.append(spr);
-				//fire gray
 				let sprGray = Helper.newSprite("/assets/fire-gray.png");
 				sprGray.anchorY = 1;
 				sprGray.width = 30;
@@ -91,10 +90,52 @@ export class FlowManager {
 		return false;
 	}
 
+	public fire(eventName: FlowEventName, sender: object = undefined): void {
+		const targetFlow = this.prepareFlow(eventName, sender);
+		if (!targetFlow) return;
+
+		try {
+			for (let i = 0; i < targetFlow.steps.length; i++) {
+				targetFlow.stepIndex = i;
+				if (globalThis.debugMode && targetFlow.fireDebugs[i]) {
+					targetFlow.fireDebugs[i].active();
+				}
+				targetFlow.steps[i].onStep(targetFlow.eventName);
+			}
+		} catch (e) {
+			console.error(e);
+		} finally {
+			this.finalizeFlow(targetFlow);
+		}
+	}
+
 	public async fireAsync(
 		eventName: FlowEventName,
 		sender: object = undefined
 	) {
+		const targetFlow = this.prepareFlow(eventName, sender);
+		if (!targetFlow) return;
+
+		try {
+			for (let i = 0; i < targetFlow.steps.length; i++) {
+				targetFlow.stepIndex = i;
+				if (globalThis.debugMode && targetFlow.fireDebugs[i]) {
+					targetFlow.fireDebugs[i].active();
+				}
+				await targetFlow.steps[i].onStep(targetFlow.eventName);
+			}
+		} catch (e) {
+			console.error(e);
+		} finally {
+			this.finalizeFlow(targetFlow);
+		}
+	}
+
+	public addFlow(flow: Flow) {
+		this.flows.push(flow);
+	}
+
+	private prepareFlow(eventName: FlowEventName, sender: object): Flow | null {
 		let targetFlow: Flow = null;
 		for (let i = 0; i < this.flows.length; i++) {
 			if (this.flows[i].eventName == eventName) {
@@ -105,36 +146,21 @@ export class FlowManager {
 			}
 		}
 
-		if (!targetFlow) return;
+		if (!targetFlow) return null;
 
 		targetFlow.stepIndex = 0;
 		this.currentFlows.push(targetFlow);
 		FlowManager.eventName = targetFlow.eventName;
+		setSender(sender);
 
-		try {
-			for (let i = 0; i < targetFlow.steps.length; i++) {
-				if (i == 0) {
-					setSender(sender);
-				}
-				targetFlow.stepIndex = i;
-
-				if (globalThis.debugMode && targetFlow.fireDebugs[i]) {
-					targetFlow.fireDebugs[i].active();
-				}
-
-				await targetFlow.steps[i].onStep(targetFlow.eventName);
-			}
-		} catch (e) {
-			console.error(e);
-		} finally {
-			const index = this.currentFlows.indexOf(targetFlow);
-			if (index !== -1) {
-				this.currentFlows.splice(index, 1);
-			}
-			targetFlow.stepIndex = -1;
-		}
+		return targetFlow;
 	}
-	public addFlow(flow: Flow) {
-		this.flows.push(flow);
+
+	private finalizeFlow(targetFlow: Flow): void {
+		const index = this.currentFlows.indexOf(targetFlow);
+		if (index !== -1) {
+			this.currentFlows.splice(index, 1);
+		}
+		targetFlow.stepIndex = -1;
 	}
 }

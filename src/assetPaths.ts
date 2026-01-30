@@ -1,4 +1,5 @@
 export const assetPaths = [
+	"/assets/white-button.png",
 	"/assets/bg-summer.png",
 	"/assets/mam-cay.png",
 	"/assets/mam-cay-0.png",
@@ -12,6 +13,7 @@ export const assetPaths = [
 	"/assets/bacsi.png",
 	"/assets/test.json",
 	//button
+	"/assets/ui/background-button.png",
 	"/assets/ui/arrow-down.png",
 	"/assets/ui/arrow-left.png",
 	"/assets/ui/arrow-right.png",
