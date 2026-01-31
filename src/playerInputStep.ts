@@ -1,9 +1,9 @@
 import { FlowEventName } from "./flow/eventName";
-import { getSender, initSender, playerGameModeSender } from "./flow/sender";
+import { controlSender, getSender, initSender, playerGameModeSender, startPvPSender } from "./flow/sender";
 import { BaseStep } from "./flow/step";
 import { ISelectMode, buttonID } from "./layout/render";
+import { controlID } from "./layout/controller";
 import { gameMode } from "./messageCode";
-
 export class playerInputStep implements BaseStep {
 	private render: ISelectMode;
 	async onStep(eventName: FlowEventName): Promise<void> {
@@ -20,7 +20,10 @@ export class playerInputStep implements BaseStep {
 					if (buttonID == "readyCliked") {
 						globalThis.flowManager.fire(FlowEventName.SomeClientReadyClicked);
 						globalThis.flowManager.fireAsync(FlowEventName.WaitServerResponeReadyPvsP);
-						globalThis.flowManager.fireAsync(FlowEventName.StartPvsP);
+						let sender = new startPvPSender();
+						sender.cancel = false;
+						console.log('...', sender)
+						globalThis.flowManager.fireAsync(FlowEventName.StartPvsP, sender);
 
 					} else {
 						const modeMap: Partial<Record<buttonID, gameMode>> = {
@@ -31,12 +34,22 @@ export class playerInputStep implements BaseStep {
 						};
 						if (modeMap[buttonID] != "pp") {
 
-						globalThis.flowManager.fireAsync(FlowEventName.SomeClientSelectMode,
-							new playerGameModeSender(modeMap[buttonID]));
+							globalThis.flowManager.fireAsync(FlowEventName.SomeClientSelectMode,
+								new playerGameModeSender(modeMap[buttonID]));
 						}
 					}
 				});
+				this.render.controller.onControlClick.add((controlID: controlID) => {
+					let control = new controlSender();
+					control.controlID = controlID;
+					globalThis.flowManager.fire(FlowEventName.Control, control);
+				});
 				this.playerInput();
+				break;
+			case FlowEventName.StartPvsP:
+				{
+
+				}
 				break;
 			default:
 		}

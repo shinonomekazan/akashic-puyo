@@ -7,23 +7,9 @@ import { Flow, WaitFrameStep, BaseStep } from "./step";
 
 export class FlowCreator {
 	private _manager: FlowManager;
-
-
-	// New typed steps
-	//private _gameLogicStep: GameLogicStep;
-	//private _clientRenderStep: ClientRenderStep | null = null;
-
-	//private _clientLogic: ClientGameLogic | null;
-
 	constructor(
 		manager: FlowManager,
 		clientSceneStep: BaseStep,
-		//lobbyStep: BaseStep | null,
-		//soundStep: BaseStep | null,
-		//syncStep: BaseStep,
-		//syncRegistryStep: BaseStep,
-		//serverLogic: ServerGameLogic | null,
-		//clientLogic: ClientGameLogic | null
 	) {
 		this._manager = manager;
 		let _syncStep = new syncStep();
@@ -47,7 +33,6 @@ export class FlowCreator {
 			_playerInputStep,
 			_renderStep,
 			_syncStep,
-			clientSceneStep,
 		]));
 		this._manager.addFlow(new Flow(FlowEventName.WaitServerResponeReadyPvsP, [
 			_syncStep,
@@ -57,16 +42,20 @@ export class FlowCreator {
 		this._manager.addFlow(new Flow(FlowEventName.StartPvsP, [
 			_syncStep,
 			_renderStep,
-
+			_playerInputStep,
+			clientSceneStep,
+		]));
+		this._manager.addFlow(new Flow(FlowEventName.Control, [
+			//_playerInputStep,
+			clientSceneStep,
+			_syncStep,
+			//_renderStep,
+		]));
+		this._manager.addFlow(new Flow(FlowEventName.OtherControl, [
+			//_playerInputStep,
+			clientSceneStep,
+			//_syncStep,
+			//_renderStep,
 		]));
 	}
-
-	// Helper to filter out null steps (e.g., SoundStep on Server)
-	private buildSteps(...steps: (BaseStep | null)[]): BaseStep[] {
-		return steps.filter(s => s !== null) as BaseStep[];
-	}
-
-
-
-
 }

@@ -5,6 +5,9 @@ export enum FlowEventName {
 	SomeClientReadyClicked,
 	WaitServerResponeReadyPvsP,
 	StartPvsP,
+	Control,
+	OtherControl,
+
 	LobbyWait,     
 	StartSolo,     // Start Single Player
 	StartVsCom,    // Start VS COM

@@ -1,27 +1,20 @@
 import { BaseStep } from "./flow/step";
 import { FlowEventName } from "./flow/eventName";
 import { SoundManager } from "./soundManager";
-import {
-	addScore_sender,
-	gameOver_sender,
-	getSender,
-	move_sender,
-	rotate_sender,
-} from "./sender";
 import { GameBoard } from "./gameBoard";
+import { getSender } from "./flow/sender";
 
-export class SoundStep extends BaseStep {
+export class SoundStep implements BaseStep {
 	private soundManager: SoundManager;
 
 	constructor(soundManager: SoundManager) {
-		super();
 		this.soundManager = soundManager;
 	}
 
 	public async onStep(eventName: FlowEventName): Promise<void> {
 		const sender = getSender(eventName);
 		const myBoard = GameBoard.get(g.game.selfId);
-
+		/*
 		switch (eventName) {
 			case FlowEventName.Rotate:
 				if (
@@ -71,5 +64,6 @@ export class SoundStep extends BaseStep {
 				}
 				break;
 		}
+		*/
 	}
 }

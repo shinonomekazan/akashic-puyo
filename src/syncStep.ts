@@ -1,14 +1,16 @@
 import { FlowEventName } from "./flow/eventName";
 import { BaseStep } from "./flow/step";
-import { getSender, playerGameModeSender } from "./flow/sender";
-import { gameMessage, gameMode, readyClicked, selectMode } from "./messageCode";
+import { controlSender, getSender, playerGameModeSender, setSender, startPvPSender } from "./flow/sender";
+import { gameMessage, gameMode, gameStart, playerControl, readyClicked, selectMode } from "./messageCode";
 import { gameState } from "./gamesStateType";
 import { Helper } from "./helper";
+import { controlID } from "./layout/controller";
 
 export class syncStep implements BaseStep {
 	private gameState: gameState = "wait-select-mode";
 	private waitReadyResponse: boolean = false;
 	private waitGameStart: boolean = false;
+	private startPvPSender: startPvPSender;
 	async onStep(eventName: FlowEventName): Promise<void> {
 		switch (eventName) {
 			case FlowEventName.Init:
@@ -35,25 +37,35 @@ export class syncStep implements BaseStep {
 				}
 				break;
 			case FlowEventName.SomeClientReadyClicked:
-				console.log('ready clicked event');
 				this.waitReadyResponse = true;
 				this.waitGameStart = true;
 				if (this.gameState == "wait-select-mode") {
 					g.game.raiseEvent(new g.MessageEvent(
 						new gameMessage("readyClicked", undefined)
 					));
-					console.log('xxx');
 				}
 				break;
 			case FlowEventName.WaitServerResponeReadyPvsP:
-				console.log('1')
 				await Helper.waitUntil(() => this.waitReadyResponse == false)
-				console.log('2')
 				break;
 			case FlowEventName.StartPvsP:
-				console.log('1 game start!')
 				await Helper.waitUntil(() => this.waitGameStart == false)
-				console.log('2 game start!')
+				setSender(this.startPvPSender, FlowEventName.StartPvsP);
+				break;
+			case FlowEventName.Control:
+				{
+					let sen = getSender(FlowEventName.Control) as controlSender;
+					//console.log('sennn ', sen.controlID);
+					g.game.raiseEvent(new g.MessageEvent(
+						new gameMessage("control", sen.controlID)
+					));
+				}
+				break;
+			case FlowEventName.OtherControl:
+				{
+					await Helper.waitUntil(() => this.waitGameStart == false)
+
+				}
 				break;
 			default:
 		}
@@ -75,8 +87,15 @@ export class syncStep implements BaseStep {
 			}
 		} else {
 			if (msg.type == "startGamePvP") {
+				let x = msg.data as gameStart;
+				this.startPvPSender = new startPvPSender();
+				this.startPvPSender.cancel = false;
+				this.startPvPSender.seed1 = x.seed1;
+				this.startPvPSender.seed2 = x.seed2;
+				this.startPvPSender.id1 = x.id1;
+				this.startPvPSender.id2 = x.id2;
 				this.waitGameStart = false;
-
+				this.gameState = "playing";
 			} else {
 				switch (this.gameState) {
 					case "wait-select-mode":
@@ -89,7 +108,18 @@ export class syncStep implements BaseStep {
 						}
 						break;
 					case "playing":
+						{
+							let data = ev.data as gameMessage;
+							if (data.type === "control") {
+								let c = data.data as playerControl;
+								console.log('consotrllll ', c.playerId);
+								let sen = new controlSender();
+								sen.controlID = c.controlID;
+								sen.playerId = c.playerId;
+								globalThis.flowManager.fire(FlowEventName.OtherControl, sen);
 
+							}
+						}
 						break;
 					default:
 						console.error('unknown wait state: ', this.gameState);

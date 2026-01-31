@@ -1,7 +1,10 @@
+import { controlID } from "./layout/controller";
+
 export type MessageType =
-	"selectGameMode"
-	| "readyClicked"
-	| "startGamePvP"
+	"selectGameMode" |
+	"readyClicked" |
+	"startGamePvP" |
+	"control";
 export class gameMessage {
 	constructor(public type: MessageType, public data: any) { }
 }
@@ -15,5 +18,8 @@ export class readyClicked {
 	constructor(public idClicked: string) { }
 }
 export class gameStart {
-	constructor(public id1: string, public id2: string) { }
+	constructor(public id1: string, public id2: string, public seed1: number, public seed2: number) { }
+}
+export class playerControl {
+	constructor(public playerId: string, public controlID: controlID) { }
 }

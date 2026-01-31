@@ -3,11 +3,17 @@ import { Helper } from "../helper";
 import { button9Patch } from "./button9Patch";
 import { layout } from "./layout";
 import * as al from "@akashic-extension/akashic-label";
-import { TextAlign } from "@akashic/akashic-engine";
+import { E, TextAlign } from "@akashic/akashic-engine";
+import { controller } from "./controller";
 
 export type buttonID = "btnSolo" | "btnPC" | "btnPvP" | "readyCliked";
+
 export interface ISelectMode {
 	onButtonClick: g.Trigger<buttonID>;
+	controller: controller;
+}
+export interface IUIInGame {
+	getLayer(): { gameLayer: g.E, backgroundLayer: g.E };
 }
 export interface IUILobby {
 	showDialogJoinPvP(): void;
@@ -15,18 +21,27 @@ export interface IUILobby {
 	setShowReadySuccessAndWaitOther(isShow: boolean): void;
 	startGamePvP(): void;
 }
-export class render implements ISelectMode, IUILobby {
+export class render implements ISelectMode, IUILobby, IUIInGame {
 	onButtonClick: Trigger<buttonID> = new Trigger;
+	controller: controller;
 	private layout: layout;
 	private loadingContainer: g.E | undefined;
 	private loadingWaitOtherContainer: g.E | undefined;
+	private controllerContainer: g.E | undefined;
 	private selectModeContainer: g.E | undefined;
 	constructor(scene: g.Scene) {
 		this.layout = new layout(scene);
 		this.layout.appendToScene(scene);
+		this.createController();
 		let bg = Helper.newSprite("/assets/background.png");
 		this.layout.gameBgLayer.append(bg);
 
+	}
+	getLayer(): { gameLayer: E; backgroundLayer: E; } {
+		return {
+			backgroundLayer: this.layout.gameBgLayer,
+			gameLayer: this.layout.gameLayer
+		}
 	}
 	setShowReadySuccessAndWaitOther(isShow: boolean): void {
 		this.setShowLoading(false);
@@ -79,7 +94,7 @@ export class render implements ISelectMode, IUILobby {
 		this.setShowLoading(false);
 		this.setShowReadySuccessAndWaitOther(false);
 		this.selectModeContainer.hide();
-
+		this.controller.layoutRoot.show();
 	}
 	setShowLoading(isShow: boolean): void {
 		if (this.loadingContainer == undefined) {
@@ -119,6 +134,14 @@ export class render implements ISelectMode, IUILobby {
 		} else {
 			this.loadingContainer.hide();
 		}
+	}
+	private createController() {
+		this.controllerContainer = new g.E({
+			scene: this.layout.root.scene,
+		});
+		this.controller = new controller(this.controllerContainer);
+		this.layout.uiLayer.append(this.controllerContainer);
+		this.controller.layoutRoot.hide();
 	}
 	public selectMode() {
 		if (this.selectModeContainer == undefined) {

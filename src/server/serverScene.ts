@@ -1,12 +1,16 @@
 import { FlowEventName } from "../flow/eventName";
 import { BaseStep } from "../flow/step";
+import { GameBoardModel } from "../gameLogic/gameBoard.model";
 import { gameState } from "../gamesStateType";
 import { Helper } from "../helper";
-import { gameMessage, gameMode, gameStart, readyClicked, selectMode } from "../messageCode";
+import { controlID } from "../layout/controller";
+import { gameMessage, gameMode, gameStart, playerControl, readyClicked, selectMode } from "../messageCode";
 export class serverScene extends g.Scene implements BaseStep {
 	gameState: gameState = "wait-select-mode"
 	playerId1: string;
 	playerId2: string;
+	private p1Model: GameBoardModel;
+	private p2Model: GameBoardModel;
 	constructor(param: g.SceneParameterObject) {
 		super(param);
 		this.onLoad.add(this.onGameLoad, this);
@@ -39,6 +43,9 @@ export class serverScene extends g.Scene implements BaseStep {
 					case "readyClicked":
 						this.clientReadyClicked(ev.player.id);
 						break;
+					case "control":
+						this.playerControl(ev.player.id, data.data as controlID);
+						break;
 					default:
 						console.error('unknown message type in select-mode ', data.type);
 						break;
@@ -70,12 +77,23 @@ export class serverScene extends g.Scene implements BaseStep {
 		console.log('p1: ', this.playerId1, ', p2: ', this.playerId2);
 		if (this.playerId1 != undefined && this.playerId2 != undefined) {
 			console.log('start game');
+			let seed1 = 12345;
+			let seed2 = 67890;
+			this.p1Model = new GameBoardModel(this.playerId1, 0, seed1);
+			this.p2Model = new GameBoardModel(this.playerId2, 1, seed2);
 			this.raiseWithDelay(
 				new gameMessage(
 					"startGamePvP",
-					new gameStart(this.playerId1, this.playerId2)),
+					new gameStart(this.playerId1, this.playerId2, seed1, seed2)),
 				1000)
 		}
+	}
+	private playerControl(idPlayer: string, controlID: controlID) {
+		const targetModel = (idPlayer === this.playerId1) ? this.p1Model : this.p2Model;
+		targetModel.moveWithControlInput(controlID);
+		g.game.raiseEvent(new g.MessageEvent(
+			new gameMessage("control", new playerControl(idPlayer, controlID))
+		));
 	}
 	private async raiseWithDelay(data: any, time: number) {
 		if (time > 0) {

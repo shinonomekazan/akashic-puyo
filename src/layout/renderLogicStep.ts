@@ -1,38 +1,44 @@
 import { FlowEventName } from "../flow/eventName";
 import { BaseStep } from "../flow/step";
-import { getSender, initSender, playerGameModeSender } from "../flow/sender";
-//import { gameMessage, gameMode, selectMode } from "./messageCode";
-//import { gameState } from "./gamesStateType";
-import { ISelectMode, IUILobby } from "./render";
+import { getSender, initSender, playerGameModeSender, startPvPSender } from "../flow/sender";
+import { ISelectMode, IUIInGame, IUILobby } from "./render";
 
 export class renderLogicStep implements BaseStep {
-	private render: IUILobby;
+	private renderLobby: IUILobby;
+	private renderInGame: IUIInGame;
 	async onStep(eventName: FlowEventName): Promise<void> {
 		switch (eventName) {
 			case FlowEventName.Init:
 				{
 					const sender = getSender() as initSender;
-					this.render = sender.render;
+					this.renderLobby = sender.render;
+					this.renderInGame = sender.render;
 				}
 				break;
 			case FlowEventName.SomeClientSelectMode:
 				const x = getSender() as playerGameModeSender;
 				if (x.mode == "pp") {
-					this.render.showDialogJoinPvP();
+					this.renderLobby.showDialogJoinPvP();
 				} else {
 					x.uiPassed = true;
 				}
 				break;
 			case FlowEventName.SomeClientReadyClicked:
-				this.render.setShowLoading(true);
+				this.renderLobby.setShowLoading(true);
 
 				break;
 			case FlowEventName.WaitServerResponeReadyPvsP:
-				this.render.setShowReadySuccessAndWaitOther(true);
+				this.renderLobby.setShowReadySuccessAndWaitOther(true);
 				break;
 			case FlowEventName.StartPvsP:
-				this.render.startGamePvP();
-
+				{
+					this.renderLobby.startGamePvP();
+					let sender = getSender(FlowEventName.StartPvsP) as startPvPSender;
+					let layerInGame = this.renderInGame.getLayer();
+					sender.scene = g.game.scene();
+					sender.backgroundLayer = layerInGame.backgroundLayer;
+					sender.gameLayer = layerInGame.gameLayer;
+				}
 				break;
 
 			default:
