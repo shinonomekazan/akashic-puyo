@@ -6,16 +6,16 @@ export interface Point {
 
 export interface GarbageDropInfo {
 	count: number;
-	distribution: number[]; // Array of size COLS, value is number of garbage per col
+	distribution: number[];
 	boardSnapshot: number[][];
 }
 
 export interface ResolutionStep {
 	type: "clear" | "drop";
-	matches?: Point[]; // For "clear" type
-	scoreGained?: number; // For "clear" type
-	garbageToSend?: number; // For "clear" type
-	boardSnapshot: number[][]; // The state of the board AFTER this step is applied
+	matches?: Point[];
+	scoreGained?: number;
+	garbageToSend?: number;
+	boardSnapshot: number[][];
 }
 
 export interface ExecutionResult {
@@ -31,7 +31,6 @@ export class GameBoardModel {
 
 	public board: number[][] = [];
 
-	// Puyo state
 	public currentPuyo: {
 		x: number;
 		y: number;
@@ -48,11 +47,9 @@ export class GameBoardModel {
 	public score: number = 0;
 	public nuisanceQueue: number = 0;
 
-	// Identifiers
 	public playerIndex: number;
 	public id: string;
 
-	// RNG
 	private rng: g.RandomGenerator;
 	private garbageRng: g.RandomGenerator;
 	private rngSeed: number;
@@ -68,7 +65,6 @@ export class GameBoardModel {
 		this.playerIndex = playerIndex;
 		this.rngSeed = rngSeed !== undefined ? rngSeed : Math.floor(g.game.random.generate() * 1000000);
 
-		// In Akashic environment (even headless), g.XorshiftRandomGenerator is available
 		this.rng = new g.XorshiftRandomGenerator(this.rngSeed);
 		this.garbageRng = new g.XorshiftRandomGenerator(this.rngSeed + 9999);
 
@@ -83,15 +79,8 @@ export class GameBoardModel {
 		this.nuisanceQueue = 0;
 		this.currentPuyo = null;
 		this.nextPuyo = null;
-
-		// Note: We generally don't reset RNG to keep the sequence moving, 
-		// but if a hard reset is needed, re-instantiate based on seed.
 	}
 
-	/**
-	 * Creates a copy of the current internal state.
-	 * Useful for syncing to clients.
-	 */
 	public getSnapshot() {
 		return {
 			id: this.id,
@@ -117,7 +106,6 @@ export class GameBoardModel {
 		this.rngIterationCount = data.rngIterationCount || 0;
 		this.garbageRngIterationCount = data.garbageRngIterationCount || 0;
 
-		// Re-sync RNG state
 		if (this.rngSeed !== undefined) {
 			this.rng = new g.XorshiftRandomGenerator(this.rngSeed);
 			for (let i = 0; i < this.rngIterationCount; i++) {
@@ -132,6 +120,15 @@ export class GameBoardModel {
 	}
 
 	// --- LOGIC ACTIONS ---
+
+	/**
+	 * Receives Nuisance (Garbage) from opponent.
+	 * This adds to the queue which will drop later.
+	 */
+	public addNuisance(amount: number) {
+		this.nuisanceQueue += amount;
+	}
+
 	public hardDrop(): void {
 		if (!this.currentPuyo) return;
 		while (this.isValid(this.currentPuyo.x, this.currentPuyo.y + 1, this.currentPuyo.rot)) {
@@ -145,18 +142,15 @@ export class GameBoardModel {
 		const delta = clockwise ? 1 : 3;
 		const nextRot = (currentRot + delta) % 4;
 
-		// Standard rotation
 		if (this.isValid(this.currentPuyo.x, this.currentPuyo.y, nextRot)) {
 			this.currentPuyo.rot = nextRot;
 			return true;
 		}
-		// Wall kick (left)
 		if (this.isValid(this.currentPuyo.x - 1, this.currentPuyo.y, nextRot)) {
 			this.currentPuyo.x -= 1;
 			this.currentPuyo.rot = nextRot;
 			return true;
 		}
-		// Wall kick (right)
 		if (this.isValid(this.currentPuyo.x + 1, this.currentPuyo.y, nextRot)) {
 			this.currentPuyo.x += 1;
 			this.currentPuyo.rot = nextRot;
@@ -214,11 +208,9 @@ export class GameBoardModel {
 	): boolean {
 		if (this.currentPuyo) return false;
 
-		// Spawn check
 		const spawnX = 2;
 		const spawnY = 1;
 		if (this.board[spawnY][spawnX] !== 0) {
-			// Game Over condition usually
 			return false;
 		}
 
@@ -230,9 +222,8 @@ export class GameBoardModel {
 			rot: 0,
 		};
 
-		// Check immediate collision on spawn (rare but possible if top row filled)
 		if (!this.isValid(this.currentPuyo.x, this.currentPuyo.y, this.currentPuyo.rot)) {
-			return false; // Game Over
+			return false;
 		}
 
 		this.nextPuyo = {
@@ -243,49 +234,27 @@ export class GameBoardModel {
 		return true;
 	}
 
-	/**
-	 * Locks the current puyo, calculates the entire chain reaction, 
-	 * handles garbage generation, and updates the board state.
-	 * Returns the sequence of events (ExecutionResult) for the View to animate.
-	 */
 	public lockPuyo(): ExecutionResult {
 		if (!this.currentPuyo) return { steps: [] };
 
 		const { x, y, rot, colorMain, colorSub } = this.currentPuyo;
 		const sub = this.getSubPos(x, y, rot);
 
-		// 1. Place Puyo on board
 		this.board[y][x] = colorMain;
 		this.board[sub.y][sub.x] = colorSub;
 		this.currentPuyo = null;
 
-		// 2. Resolve Chains (Gravity -> Clear -> Repeat)
 		const steps: ResolutionStep[] = [];
-
-		// Initial Gravity application before checking matches (in case puyo was placed in mid-air?)
-		// Usually lock happens when it hits something, but let's ensure gravity first if needed.
-		// For standard puyo, we usually place, then apply gravity to floating parts, then check match.
-		// Let's assume standard Puyo physics:
-
 		let workingBoard = this.board.map(row => [...row]);
-
-		// First Drop (if the placed puyo created gaps below it, though rare in normal lock)
-		// For simplicity, we start the loop.
-
 		let causedClear = false;
 		let chainCount = 0;
 
 		do {
 			causedClear = false;
 
-			// A. Apply Gravity to floating blocks
 			const boardBeforeGravity = workingBoard.map(r => [...r]);
 			this.applyGravity(workingBoard);
 
-			// If gravity changed anything, record a drop step (optional optimization: only if changed)
-			// But strictly, we check matches AFTER gravity settles.
-			// Since we just placed the puyo, let's assume it's sitting on something.
-			// However, if we cleared something in previous loop, gravity is needed.
 			if (chainCount > 0) {
 				steps.push({
 					type: "drop",
@@ -293,7 +262,6 @@ export class GameBoardModel {
 				});
 			}
 
-			// B. Find Matches
 			let visited = Array.from({ length: GameBoardModel.ROWS }, () =>
 				Array(GameBoardModel.COLS).fill(false)
 			);
@@ -316,18 +284,15 @@ export class GameBoardModel {
 				}
 			}
 
-			// C. Process Matches
 			if (toRemove.length > 0) {
 				causedClear = true;
 				chainCount++;
 				const scoreGain = this.calculateScore(toRemove.length, chainCount);
 				this.score += scoreGain;
 
-				// Garbage Logic
 				const rawGarbage = this.calculateGarbageGenerated(toRemove.length, chainCount, scoreGain);
 				let garbageToSend = 0;
 
-				// Offset nuisance
 				if (this.nuisanceQueue > 0) {
 					if (rawGarbage >= this.nuisanceQueue) {
 						garbageToSend = rawGarbage - this.nuisanceQueue;
@@ -340,7 +305,6 @@ export class GameBoardModel {
 					garbageToSend = rawGarbage;
 				}
 
-				// Find adjacent garbage to clear
 				let garbageToRemove: Point[] = [];
 				const dirs = [
 					{ dx: 0, dy: 1 }, { dx: 0, dy: -1 },
@@ -364,7 +328,6 @@ export class GameBoardModel {
 
 				const totalCleared = [...toRemove, ...garbageToRemove];
 
-				// Remove from working board
 				totalCleared.forEach(p => {
 					workingBoard[p.y][p.x] = 0;
 				});
@@ -374,20 +337,15 @@ export class GameBoardModel {
 					matches: totalCleared,
 					scoreGained: scoreGain,
 					garbageToSend: garbageToSend,
-					boardSnapshot: workingBoard.map(r => [...r]) // Snapshot with holes
+					boardSnapshot: workingBoard.map(r => [...r])
 				});
-
-				// Loop continues to apply gravity next iteration
 			}
 
 		} while (causedClear);
 
-		// 3. Handle Garbage Drop (if no chains happened or chain ended and we have nuisance)
 		let garbageDropInfo: GarbageDropInfo | undefined;
 
-		// Garbage drops only if the last move didn't clear anything (rule variation dependent, 
-		// but typically garbage falls when player can't attack back or chain finished).
-		// Here we assume garbage falls at end of turn if nuisance exists.
+		// Garbage drop logic happens at end of turn if nuisance exists
 		if (this.nuisanceQueue > 0) {
 			const dropAmount = Math.min(this.nuisanceQueue, GameBoardModel.MAX_GARBAGE);
 			this.nuisanceQueue -= dropAmount;
@@ -402,7 +360,6 @@ export class GameBoardModel {
 
 			if (remainder > 0) {
 				const cols = Array.from({ length: GameBoardModel.COLS }, (_, i) => i);
-				// Fisher-Yates shuffle for columns using garbageRng
 				for (let i = cols.length - 1; i > 0; i--) {
 					const j = Math.floor(this.garbageRng.generate() * (i + 1));
 					this.garbageRngIterationCount++;
@@ -413,19 +370,9 @@ export class GameBoardModel {
 				}
 			}
 
-			// Apply garbage to working board
 			for (let c = 0; c < GameBoardModel.COLS; c++) {
 				const count = garbageCounts[c];
 				let placed = 0;
-				// Garbage falls from top, finding first empty spot? 
-				// Or drops on top of stack? Standard is drops on top.
-				// We fill empty spots from top down until we hit a block or run out of count.
-				// Wait, standard Puyo garbage falls from ceiling onto the stack.
-				// So we check valid positions from bottom up? 
-				// Actually, we just place them on top of the highest block.
-
-				// Let's implement logic: insert at top empty slots, then apply gravity later?
-				// Simplest logic: Place in top available slots, then gravity handles stack.
 				for (let r = 0; r < GameBoardModel.ROWS && placed < count; r++) {
 					if (workingBoard[r][c] === 0) {
 						workingBoard[r][c] = GameBoardModel.GARBAGE_ID;
@@ -443,7 +390,6 @@ export class GameBoardModel {
 			};
 		}
 
-		// Update real board to final state
 		this.board = workingBoard;
 
 		return {
@@ -451,8 +397,6 @@ export class GameBoardModel {
 			garbageDrop: garbageDropInfo
 		};
 	}
-
-	// --- HELPERS ---
 
 	public getSubPos(x: number, y: number, rot: number) {
 		let sx = x;
@@ -523,14 +467,12 @@ export class GameBoardModel {
 	}
 
 	private calculateScore(clearedCount: number, chainCount: number): number {
-		// Basic Puyo scoring logic simplified
 		return clearedCount * (chainCount * 10);
 	}
 
 	private calculateGarbageGenerated(clearedCount: number, chainCount: number, score: number): number {
 		let baseGarbage = Math.max(1, clearedCount - 3);
 		let chainBonus = (chainCount - 1) * 3;
-		// Simplified formula
 		return baseGarbage + chainBonus;
 	}
 }

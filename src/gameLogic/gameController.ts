@@ -6,6 +6,9 @@ export class GameController {
 	public model: GameBoardModel;
 	public view: GameBoardView | null = null;
 
+	// Event triggered when this controller finishes a chain and generates garbage
+	public onGarbageSent: g.Trigger<number> = new g.Trigger();
+
 	private scene: g.Scene;
 	private lastDropTime: number = 0;
 	private readonly DROP_INTERVAL = 1000;
@@ -100,12 +103,26 @@ export class GameController {
 		this.isLocked = true;
 
 		const result = this.model.lockPuyo();
+
+		// Calculate total garbage sent in this move
+		let totalGarbage = 0;
+		result.steps.forEach(step => {
+			if (step.garbageToSend && step.garbageToSend > 0) {
+				totalGarbage += step.garbageToSend;
+			}
+		});
+
+		// Notify system that garbage is sent (to opponent)
+		if (totalGarbage > 0) {
+			this.onGarbageSent.fire(totalGarbage);
+		}
+
 		if (this.view) {
+			// Update local bar (e.g. if we countered garbage, our nuisance queue went down)
+			this.view.updateNuisanceBar();
 			await this.view.animateExecutionResult(result);
 		} else {
-
-			const estimatedDuration = result.steps.length * 500;
-			// await dummyWait(estimatedDuration); 
+			// headless wait simulation could go here
 		}
 
 		this.isLocked = false;

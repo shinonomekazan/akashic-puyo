@@ -1,5 +1,5 @@
 import { Helper } from "../helper";
-import { GameBoardModel, ExecutionResult, ResolutionStep } from "./gameBoard.model";
+import { GameBoardModel, ExecutionResult } from "./gameBoard.model";
 
 export class GameBoardView {
 	public static puyoSize: number = 30;
@@ -12,6 +12,9 @@ export class GameBoardView {
 	private backgroundNode: g.FilledRect;
 	public nextPuyoDisplayNode: g.E;
 
+	// New Node for Garbage UI
+	public nuisanceNode: g.E;
+
 	private parentBackground: g.E;
 	private parentGame: g.E;
 
@@ -22,7 +25,10 @@ export class GameBoardView {
 
 	// Flags
 	public isAnimating: boolean = false;
-	public busyUntil: number = 0; // Defines when animation finishes in game age
+	public busyUntil: number = 0;
+
+	// Font for Nuisance Counter
+	private font: g.DynamicFont;
 
 	private static colorBackground: string[] = [
 		"gray",
@@ -43,6 +49,13 @@ export class GameBoardView {
 		this.parentGame = parentGame;
 		this.model = model;
 
+		// Initialize Font for the garbage counter
+		this.font = new g.DynamicFont({
+			game: g.game,
+			fontFamily: g.FontFamily.SansSerif,
+			size: 20
+		});
+
 		this.initVisuals();
 	}
 
@@ -51,13 +64,12 @@ export class GameBoardView {
 		if (this.backgroundNode && !this.backgroundNode.destroyed()) this.backgroundNode.destroy();
 		if (this.ghostPuyoNode && !this.ghostPuyoNode.destroyed()) this.ghostPuyoNode.destroy();
 		if (this.currentPuyoNode && !this.currentPuyoNode.destroyed()) this.currentPuyoNode.destroy();
+		if (this.nuisanceNode && !this.nuisanceNode.destroyed()) this.nuisanceNode.destroy();
 	}
 
 	private getVisualIndex(): number {
 		if (GameBoardView.totalBoardsInGame === 1) return 0;
-		// Determine visual position (left or right) based on selfId logic
-		// You might need to pass selfId or handle this logic externally
-		const localPlayerIndex = 0; // Default or fetch from global game state
+		const localPlayerIndex = 0;
 		return (this.model.playerIndex - localPlayerIndex + 2) % 2;
 	}
 
@@ -82,6 +94,17 @@ export class GameBoardView {
 			width: GameBoardView.puyoSize * GameBoardModel.COLS,
 			height: GameBoardView.puyoSize * GameBoardModel.ROWS,
 			cssColor: GameBoardView.colorBackground[this.model.playerIndex % GameBoardView.colorBackground.length],
+		});
+
+		// Nuisance Bar (Garbage Pending UI)
+		// Placed above the board
+		this.nuisanceNode = new g.E({
+			scene: this.scene,
+			parent: this.parentGame,
+			x: offsetX,
+			y: this.yLocation - 35,
+			width: boardWidth,
+			height: 30
 		});
 
 		// Board Container
@@ -112,7 +135,9 @@ export class GameBoardView {
 			x: offsetX + GameBoardModel.COLS * GameBoardView.puyoSize + 10,
 			y: this.yLocation
 		});
+
 		this.renderBoard();
+		this.updateNuisanceBar();
 	}
 
 	public updateNextPuyoView() {
@@ -122,7 +147,7 @@ export class GameBoardView {
 
 		this.nextPuyoDisplayNode = new g.E({
 			scene: this.scene,
-			parent: this.parentGame, 
+			parent: this.parentGame,
 			x: this.boardNode.x + GameBoardModel.COLS * GameBoardView.puyoSize + 20,
 			y: this.yLocation
 		});
@@ -143,15 +168,57 @@ export class GameBoardView {
 			spr.modified();
 		}
 	}
+
 	/**
-	 * Full re-render of the board based on Model state
+	 * Updates the UI above the board to show pending garbage
 	 */
+	public updateNuisanceBar() {
+		if (!this.nuisanceNode || this.nuisanceNode.destroyed()) return;
+
+		// Clear previous contents
+		this.nuisanceNode.destroy();
+
+		// Recreate container to keep position correct
+		this.nuisanceNode = new g.E({
+			scene: this.scene,
+			parent: this.parentGame,
+			x: this.backgroundNode.x,
+			y: this.yLocation - 35,
+			width: GameBoardModel.COLS * GameBoardView.puyoSize,
+			height: 30
+		});
+
+		const count = this.model.nuisanceQueue;
+		if (count <= 0) return;
+
+		// 1. Icon
+		const iconSize = 24;
+		const icon = Helper.newSprite("/assets/garbage.png");
+		this.nuisanceNode.append(icon);
+
+		// Scale icon
+		const scale = iconSize / (icon.width || 30); // fallback if width not loaded yet
+		icon.scaleX = scale;
+		icon.scaleY = scale;
+		icon.modified();
+
+		// 2. Text Counter (e.g., "x5")
+		const label = new g.Label({
+			scene: this.scene,
+			font: this.font,
+			text: `x${count}`,
+			fontSize: 20,
+			textColor: "red",
+			x: iconSize + 5,
+			y: 0
+		});
+		this.nuisanceNode.append(label);
+	}
+
 	public renderBoard(overrideBoard?: number[][]) {
 		if (this.boardNode.destroyed()) return;
 
-		// Clear existing children
 		this.boardNode.destroy();
-		// Recreate container (simpler than managing children pool for this example)
 		const offsetX = this.backgroundNode.x;
 		this.boardNode = new g.E({
 			scene: this.scene,
@@ -178,7 +245,6 @@ export class GameBoardView {
 			}
 		}
 
-		// Ensure overlay nodes stay on top
 		if (this.ghostPuyoNode && !this.ghostPuyoNode.destroyed()) {
 			this.parentGame.append(this.ghostPuyoNode);
 		}
@@ -217,7 +283,7 @@ export class GameBoardView {
 			targetParent.append(spr);
 			spr.x = x * GameBoardView.puyoSize + (isGhost ? offset : 0);
 			spr.y = y * GameBoardView.puyoSize + (isGhost ? offset : 0);
-			spr.opacity = isGhost ? 0.0 : 1; // Assuming ghost hidden for now based on opacity 0 in original
+			spr.opacity = isGhost ? 0.0 : 1;
 
 			spr.scaleX = size / spr.width;
 			spr.scaleY = size / spr.height;
@@ -226,7 +292,6 @@ export class GameBoardView {
 
 		const puyo = this.model.currentPuyo;
 
-		// Calculate Ghost Y
 		let ghostY = puyo.y;
 		while (this.model.isValid(puyo.x, ghostY + 1, puyo.rot)) {
 			ghostY++;
@@ -243,8 +308,11 @@ export class GameBoardView {
 	}
 
 	public async animateExecutionResult(result: ExecutionResult) {
+		// Update Nuisance Bar first to show current state (e.g. if we countered some garbage)
+		this.updateNuisanceBar();
+
 		if (result.steps.length === 0 && !result.garbageDrop) {
-			this.renderBoard(); // Just sync
+			this.renderBoard();
 			return;
 		}
 
@@ -255,16 +323,12 @@ export class GameBoardView {
 			const STEP_DELAY = 15;
 			const BLINK_DURATION = 40;
 
-			// Update busy timer for external logic checks
 			this.busyUntil = g.game.age + (step.type === "clear" ? BLINK_DURATION + STEP_DELAY : STEP_DELAY);
 
 			if (step.type === "clear") {
 				if (!g.game.isSkipping) {
-					// Add Score UI effect here if needed
-
 					await this.waitFrames(STEP_DELAY);
 
-					// Blinking effect
 					const blinkers: g.E[] = [];
 					step.matches!.forEach((p) => {
 						let blinkSpr = Helper.newSprite("/assets/blink.png");
@@ -278,7 +342,6 @@ export class GameBoardView {
 						blinkers.push(blinkSpr);
 					});
 
-					// Blink Animation Loop
 					let elapsed = 0;
 					let visible = true;
 					const BLINK_INTERVAL = 8;
@@ -309,8 +372,10 @@ export class GameBoardView {
 		if (result.garbageDrop) {
 			await this.animateGarbageFall(result.garbageDrop.distribution);
 			this.renderBoard(result.garbageDrop.boardSnapshot);
+
+			// Update bar again after drop (should be 0 or reduced)
+			this.updateNuisanceBar();
 		} else {
-			// Final sync just in case
 			this.renderBoard();
 		}
 
@@ -331,9 +396,7 @@ export class GameBoardView {
 			for (let r = 0; r < GameBoardModel.ROWS; r++) {
 				if (this.model.board[r][c] === GameBoardModel.GARBAGE_ID && droppedCount < count) {
 					const targetY = r * GameBoardView.puyoSize;
-
-					// Random start Y
-					const rand = g.game.random.generate(); // Visual RNG only
+					const rand = g.game.random.generate();
 					const startY = -40 - droppedCount * 35 - rand * 20;
 
 					const spr = Helper.newSprite("/assets/garbage.png");
@@ -389,7 +452,6 @@ export class GameBoardView {
 
 				if (allFinished) {
 					this.scene.onUpdate.remove(handler);
-					// Remove temp sprites, the final renderBoard will place the permanent ones
 					sprites.forEach(s => s.sprite.destroy());
 					resolve();
 				}
@@ -416,7 +478,6 @@ export class GameBoardView {
 
 	private getColor(idx: number): string {
 		if (idx === GameBoardModel.GARBAGE_ID) return "/assets/garbage.png";
-		// Map logic IDs to Assets
 		const assets = ["", "/assets/red.png", "/assets/yellow.png", "/assets/blue.png", "/assets/green.png", "/assets/purple.png"];
 		return assets[idx] || "/assets/red.png";
 	}

@@ -3,11 +3,8 @@ import { FlowManager } from "../flow/flowManager";
 import { FlowEventName } from "../flow/eventName";
 import { BaseStep } from "../flow/step";
 import { assetPaths } from "../assetPaths";
-import { layout } from "../layout/layout";
 import { render } from "../layout/render";
-import { controlSender, getSender, initSender, initialSender, startPvPSender } from "../flow/sender";
-import { GameBoardModel } from "../gameLogic/gameBoard.model";
-import { GameBoardView } from "../gameLogic/gameBoard.view";
+import { controlSender, getSender, initSender, startPvPSender } from "../flow/sender";
 import { GameController } from "../gameLogic/gameController";
 
 export interface MainSceneParameterObject extends g.SceneParameterObject {
@@ -40,8 +37,27 @@ export class clientScene extends g.Scene implements BaseStep {
 				const thisSeed = isPlayer1 ? sender.seed1 : sender.seed2;
 				const otherSeed = isPlayer1 ? sender.seed2 : sender.seed1;
 				this.player1 = new GameController(this, thisId, 0, thisSeed, sender.gameLayer);
-				this.player1.start();
 				this.player2 = new GameController(this, otherId, 1, otherSeed, sender.gameLayer);
+
+				// --- Garbage Wiring ---
+				// When P1 attacks, P2 gets garbage
+				this.player1.onGarbageSent.add((amount) => {
+					console.log(`P1 attacked P2 with ${amount} garbage`);
+					this.player2.model.addNuisance(amount);
+					// Update P2's view immediately so they see the warning
+					if (this.player2.view) this.player2.view.updateNuisanceBar();
+				});
+
+				// When P2 attacks, P1 gets garbage
+				this.player2.onGarbageSent.add((amount) => {
+					console.log(`P2 attacked P1 with ${amount} garbage`);
+					this.player1.model.addNuisance(amount);
+					// Update P1's view immediately
+					if (this.player1.view) this.player1.view.updateNuisanceBar();
+				});
+				// ----------------------
+
+				this.player1.start();
 				this.player2.start();
 				g.game.onUpdate.add(() => {
 					const currentTime = g.game.age * (1000 / g.game.fps);
