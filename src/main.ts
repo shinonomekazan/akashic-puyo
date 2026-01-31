@@ -1,4 +1,4 @@
-import { clientScene } from "./flow/clientScene";
+import { clientScene } from "./client/clientScene";
 import { FlowManager } from "./flow/flowManager";
 import { serverScene } from "./server/serverScene";
 

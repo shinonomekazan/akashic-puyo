@@ -1,13 +1,14 @@
-import { FlowCreator } from "./flowCreator";
-import { FlowManager } from "./flowManager";
-import { FlowEventName } from "./eventName";
-import { BaseStep } from "./step";
+import { FlowCreator } from "../flow/flowCreator";
+import { FlowManager } from "../flow/flowManager";
+import { FlowEventName } from "../flow/eventName";
+import { BaseStep } from "../flow/step";
 import { assetPaths } from "../assetPaths";
 import { layout } from "../layout/layout";
 import { render } from "../layout/render";
-import { controlSender, getSender, initSender, initialSender, startPvPSender } from "./sender";
+import { controlSender, getSender, initSender, initialSender, startPvPSender } from "../flow/sender";
 import { GameBoardModel } from "../gameLogic/gameBoard.model";
 import { GameBoardView } from "../gameLogic/gameBoard.view";
+import { GameController } from "../gameLogic/gameController";
 
 export interface MainSceneParameterObject extends g.SceneParameterObject {
 	snapshot?: any;
@@ -15,10 +16,8 @@ export interface MainSceneParameterObject extends g.SceneParameterObject {
 
 export class clientScene extends g.Scene implements BaseStep {
 	private _initialSnapshot: any;
-	private p1Model: GameBoardModel;
-	private p2Model: GameBoardModel;
-	private p1View: GameBoardView;
-	private p2View: GameBoardView;
+	private player1: GameController;
+	private player2: GameController;
 	constructor(param: MainSceneParameterObject) {
 		console.clear();
 		param.assetPaths = assetPaths;
@@ -37,31 +36,23 @@ export class clientScene extends g.Scene implements BaseStep {
 				console.log("StartPvsP sender:", sender);
 				const thisId = g.game.selfId;
 				const otherId = thisId == sender.id1 ? sender.id2 : sender.id1;
-				this.p1Model = new GameBoardModel(thisId, 0, sender.seed1);
-				this.p2Model = new GameBoardModel(otherId, 1, sender.seed2);
-				const p1Colors = this.p1Model.generateRandomColors();
-				const p1Next = this.p1Model.generateRandomColors();
-				this.p1Model.spawnPuyo(p1Next, p1Colors);
-				const p2Colors = this.p2Model.generateRandomColors();
-				const p2Next = this.p2Model.generateRandomColors();
-				this.p2Model.spawnPuyo(p2Next, p2Colors);
-
-				//this.p1Model.move(1)
-
-
-				this.p1View = new GameBoardView(sender.scene, sender.backgroundLayer, sender.gameLayer, this.p1Model);
-				this.p2View = new GameBoardView(sender.scene, sender.backgroundLayer, sender.gameLayer, this.p2Model);
-				this.p1View.updatePuyoView();
-				this.p2View.updatePuyoView();
+				const isPlayer1 = thisId === sender.id1;
+				const thisSeed = isPlayer1 ? sender.seed1 : sender.seed2;
+				const otherSeed = isPlayer1 ? sender.seed2 : sender.seed1;
+				this.player1 = new GameController(this, thisId, 0, thisSeed, sender.gameLayer);
+				this.player1.start();
+				this.player2 = new GameController(this, otherId, 1, otherSeed, sender.gameLayer);
+				this.player2.start();
+				g.game.onUpdate.add(() => {
+					const currentTime = g.game.age * (1000 / g.game.fps);
+					this.player1.update(currentTime);
+					this.player2.update(currentTime);
+				});
 				break;
 			case FlowEventName.Control:
 				{
 					let sen = getSender(FlowEventName.Control) as controlSender;
-					this.p1Model.moveWithControlInput(sen.controlID)
-					console.log('control ', sen.controlID);
-					//const result = this.p1Model.lockPuyo(); 
-					//this.p1View.animateExecutionResult(result);
-					this.p1View.updatePuyoView();
+					this.player1.handleInput(sen.controlID);
 
 				}
 				break;
@@ -72,11 +63,8 @@ export class clientScene extends g.Scene implements BaseStep {
 						console.log('skip control ', sen.playerId);
 						return
 					}
-					const targetModel = (sen.playerId === this.p1Model.id) ? this.p1Model : this.p2Model;
-					const targetView = (sen.playerId === this.p1Model.id) ? this.p1View : this.p2View;
-
-					targetModel.moveWithControlInput(sen.controlID);
-					targetView.updatePuyoView();
+					const targetPlayer = (sen.playerId == this.player1.model.id) ? this.player1 : this.player2;
+					targetPlayer.handleInput(sen.controlID);
 					console.log('xxx ', sen);
 				}
 				break;

@@ -10,6 +10,7 @@ export class GameBoardView {
 	public ghostPuyoNode: g.E;
 	public currentPuyoNode: g.E;
 	private backgroundNode: g.FilledRect;
+	public nextPuyoDisplayNode: g.E;
 
 	private parentBackground: g.E;
 	private parentGame: g.E;
@@ -104,10 +105,44 @@ export class GameBoardView {
 			x: offsetX,
 			y: this.yLocation,
 		});
-
+		// Next
+		this.nextPuyoDisplayNode = new g.E({
+			scene: this.scene,
+			parent: this.parentGame,
+			x: offsetX + GameBoardModel.COLS * GameBoardView.puyoSize + 10,
+			y: this.yLocation
+		});
 		this.renderBoard();
 	}
 
+	public updateNextPuyoView() {
+		if (this.nextPuyoDisplayNode && !this.nextPuyoDisplayNode.destroyed()) {
+			this.nextPuyoDisplayNode.destroy();
+		}
+
+		this.nextPuyoDisplayNode = new g.E({
+			scene: this.scene,
+			parent: this.parentGame, 
+			x: this.boardNode.x + GameBoardModel.COLS * GameBoardView.puyoSize + 20,
+			y: this.yLocation
+		});
+
+		if (!this.model.nextPuyo) return;
+
+		const colors = [this.model.nextPuyo.colorSub, this.model.nextPuyo.colorMain];
+
+		for (let i = 0; i < 2; i++) {
+			const spr = Helper.newSprite(this.getColor(colors[i]));
+			this.nextPuyoDisplayNode.append(spr);
+
+			spr.y = i * GameBoardView.puyoSize;
+
+			const targetSize = GameBoardView.puyoSize - 2;
+			spr.scaleX = targetSize / spr.width;
+			spr.scaleY = targetSize / spr.height;
+			spr.modified();
+		}
+	}
 	/**
 	 * Full re-render of the board based on Model state
 	 */
@@ -233,9 +268,10 @@ export class GameBoardView {
 					const blinkers: g.E[] = [];
 					step.matches!.forEach((p) => {
 						let blinkSpr = Helper.newSprite("/assets/blink.png");
-						this.boardNode.append(blinkSpr);
-						blinkSpr.x = p.x * GameBoardView.puyoSize;
-						blinkSpr.y = p.y * GameBoardView.puyoSize;
+						this.parentGame.append(blinkSpr);
+						blinkSpr.x = this.boardNode.x + p.x * GameBoardView.puyoSize;
+						blinkSpr.y = this.boardNode.y + p.y * GameBoardView.puyoSize;
+
 						blinkSpr.scaleX = (GameBoardView.puyoSize - 2) / blinkSpr.width;
 						blinkSpr.scaleY = (GameBoardView.puyoSize - 2) / blinkSpr.height;
 						blinkSpr.modified();
@@ -257,13 +293,10 @@ export class GameBoardView {
 					}
 					blinkers.forEach((b) => b.destroy());
 				}
-
-				// Render the board with holes (from the step snapshot)
+				this.updatePuyoView();
 				this.renderBoard(step.boardSnapshot);
 
 			} else if (step.type === "drop") {
-				// Render the board after gravity (from snapshot)
-				// Improvement: You could tween sprites here instead of snapping
 				this.renderBoard(step.boardSnapshot);
 
 				if (!g.game.isSkipping) {
@@ -290,30 +323,13 @@ export class GameBoardView {
 
 		const sprites: { sprite: g.E; targetY: number; dy: number }[] = [];
 		const activeSprites: { sprite: g.E; targetY: number; dy: number }[] = [];
-
-		// We need to look at current board state to know where they land.
-		// Since we rendered the board after chain reaction, `this.model.board` (or the last snapshot) 
-		// technically doesn't have the garbage yet in the Visual DOM, but `this.model.board` IS updated 
-		// at the end of lockPuyo. Wait, `this.model.board` is the FINAL state.
-		// To animate falling correctly, we need the stack height BEFORE garbage.
-		// A simplification: Calculate stack height based on visual grid without the garbage ID.
-
-		// Actually, `result.garbageDrop.boardSnapshot` has the garbage. 
-		// We should calculate target Y based on the snapshot provided in the drop info.
-
-		// Let's use a simpler heuristic for visual effect:
-		// Just spawn them high up and drop them to the floor based on current stack.
-
 		for (let c = 0; c < GameBoardModel.COLS; c++) {
 			const count = garbageCounts[c];
 			if (count === 0) continue;
 
-			// Calculate stack height roughly based on current model board (which has garbage added already)
-			// We iterate from top to find where the garbage IS in the final model
 			let droppedCount = 0;
 			for (let r = 0; r < GameBoardModel.ROWS; r++) {
 				if (this.model.board[r][c] === GameBoardModel.GARBAGE_ID && droppedCount < count) {
-					// This is a garbage block that was just added (heuristic assumption)
 					const targetY = r * GameBoardView.puyoSize;
 
 					// Random start Y
