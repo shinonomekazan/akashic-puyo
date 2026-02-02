@@ -9,4 +9,5 @@ export enum FlowEventName {
 	OtherControl,
 	GameOver,
 	SceneDestroy,
+	CleanAndGotoMainMenu
 }

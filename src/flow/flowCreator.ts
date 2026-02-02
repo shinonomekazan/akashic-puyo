@@ -63,5 +63,15 @@ export class FlowCreator {
 			//_syncStep,
 			//_renderStep,
 		]));
+		this._manager.addFlow(new Flow(FlowEventName.GameOver, [
+			clientSceneStep,
+			_syncStep,
+			_renderStep,
+		]));
+		this._manager.addFlow(new Flow(FlowEventName.CleanAndGotoMainMenu, [
+			_renderStep,
+			clientSceneStep,
+			_syncStep,
+		]));
 	}
 }

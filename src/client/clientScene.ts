@@ -4,7 +4,7 @@ import { FlowEventName } from "../flow/eventName";
 import { BaseStep } from "../flow/step";
 import { assetPaths } from "../assetPaths";
 import { render } from "../layout/render";
-import { controlSender, getSender, initSender, startPvPSender } from "../flow/sender";
+import { controlSender, gameOverSender, getSender, initSender, startPvPSender } from "../flow/sender";
 import { GameController } from "../gameLogic/gameController";
 
 export interface MainSceneParameterObject extends g.SceneParameterObject {
@@ -29,10 +29,9 @@ export class clientScene extends g.Scene implements BaseStep {
 	}
 
 	async onStep(eventName: FlowEventName): Promise<void> {
-		console.log('??? ', eventName);
 		switch (eventName) {
 			case FlowEventName.Init:
-				console.log("[clientScene] Init complete.");
+				console.log("Init complete.");
 				break;
 			case FlowEventName.StartPvsP:
 				let sender = getSender(FlowEventName.StartPvsP) as startPvPSender;
@@ -46,20 +45,24 @@ export class clientScene extends g.Scene implements BaseStep {
 				this.player2 = new GameController(this, otherId, 1, otherSeed, sender.gameLayer);
 
 				// --- Garbage Wiring ---
-				// When P1 attacks, P2 gets garbage
 				this.player1.onGarbageSent.add((amount) => {
 					console.log(`P1 attacked P2 with ${amount} garbage`);
 					this.player2.model.addNuisance(amount);
-					// Update P2's view immediately so they see the warning
 					if (this.player2.view) this.player2.view.updateNuisanceBar();
 				});
 
-				// When P2 attacks, P1 gets garbage
 				this.player2.onGarbageSent.add((amount) => {
 					console.log(`P2 attacked P1 with ${amount} garbage`);
 					this.player1.model.addNuisance(amount);
-					// Update P1's view immediately
 					if (this.player1.view) this.player1.view.updateNuisanceBar();
+				});
+				// ----------------------
+				this.player1.onGameOver.add((id) => {
+					globalThis.flowManager.fireAsync(FlowEventName.GameOver, new gameOverSender(id, false));
+
+				});
+				this.player2.onGameOver.add((id) => {
+					globalThis.flowManager.fireAsync(FlowEventName.GameOver, new gameOverSender(id, true));
 				});
 				// ----------------------
 
@@ -88,6 +91,17 @@ export class clientScene extends g.Scene implements BaseStep {
 					const targetPlayer = (sen.playerId == this.player1.model.id) ? this.player1 : this.player2;
 					targetPlayer.handleInput(sen.controlID);
 					console.log('xxx ', sen);
+				}
+				break;
+			case FlowEventName.GameOver:
+				{
+					this.player1.stop();
+					this.player2.stop();
+				}
+				break;
+			case FlowEventName.CleanAndGotoMainMenu:
+				{
+					console.log('client clean');
 				}
 				break;
 			default:

@@ -11,16 +11,16 @@ export class layout {
 	public readonly uiLayer: g.E;
 
 	constructor(scene: g.Scene) {
-		this.root = new g.E({ scene: scene, parent: scene });
+		this.root = new g.E({ scene: scene, parent: scene, local: true });
 
-		this.gameGroup = new g.E({ scene: scene });
-		this.uiGroup = new g.E({ scene: scene });
+		this.gameGroup = new g.E({ scene: scene, local: true });
+		this.uiGroup = new g.E({ scene: scene, local: true });
 
-		this.gameBgLayer = new g.E({ scene: scene });
-		this.gameLayer = new g.E({ scene: scene });
+		this.gameBgLayer = new g.E({ scene: scene, local: true });
+		this.gameLayer = new g.E({ scene: scene, local: true });
 
-		this.uiBgLayer = new g.E({ scene: scene });
-		this.uiLayer = new g.E({ scene: scene });
+		this.uiBgLayer = new g.E({ scene: scene, local: true });
+		this.uiLayer = new g.E({ scene: scene, local: true });
 
 		this.gameGroup.append(this.gameBgLayer);
 		this.gameGroup.append(this.gameLayer);

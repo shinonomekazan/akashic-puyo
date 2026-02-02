@@ -4,7 +4,8 @@ export type MessageType =
 	"selectGameMode" |
 	"readyClicked" |
 	"startGamePvP" |
-	"control";
+	"control" |
+	"gameOver";
 export class gameMessage {
 	constructor(public type: MessageType, public data: any) { }
 }
@@ -22,4 +23,7 @@ export class gameStart {
 }
 export class playerControl {
 	constructor(public playerId: string, public controlID: controlID) { }
+}
+export class gameOver {
+	constructor(public id: string) { }
 }

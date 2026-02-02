@@ -1,7 +1,7 @@
 import { FlowEventName } from "./flow/eventName";
 import { BaseStep } from "./flow/step";
-import { controlSender, getSender, playerGameModeSender, setSender, startPvPSender } from "./flow/sender";
-import { gameMessage, gameMode, gameStart, playerControl, readyClicked, selectMode } from "./messageCode";
+import { controlSender, gameOverSender, getSender, playerGameModeSender, setSender, startPvPSender } from "./flow/sender";
+import { gameMessage, gameMode, gameOver, gameStart, playerControl, readyClicked, selectMode } from "./messageCode";
 import { gameState } from "./gamesStateType";
 import { Helper } from "./helper";
 import { controlID } from "./layout/controller";
@@ -65,6 +65,19 @@ export class syncStep implements BaseStep {
 				{
 					await Helper.waitUntil(() => this.waitGameStart == false)
 
+				}
+				break;
+			case FlowEventName.GameOver:
+				{
+					let sen = getSender(FlowEventName.GameOver) as gameOverSender;
+					g.game.raiseEvent(new g.MessageEvent(
+						new gameMessage("gameOver", new gameOver(sen.id))
+					));
+				}
+				break;
+			case FlowEventName.CleanAndGotoMainMenu:
+				{
+					console.log('sync clean');
 				}
 				break;
 			default:

@@ -13,6 +13,10 @@ export class playerInputStep implements BaseStep {
 				this.render = sender.render;
 				this.render.onButtonClick.add((buttonID: buttonID) => {
 					//skip pvsp => ready cliecked
+					if (buttonID == "leave") {
+						globalThis.flowManager.fire(FlowEventName.CleanAndGotoMainMenu);
+						return;
+					}
 					if (buttonID == "btnPvP") {
 						buttonID = "readyCliked";
 					}

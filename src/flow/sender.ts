@@ -47,3 +47,8 @@ export class controlSender {
 	playerId: string;
 	controlID: controlID = "Unknow";
 }
+export class gameOverSender {
+	constructor(public id: string, public thisWin: boolean) {
+
+	}
+}

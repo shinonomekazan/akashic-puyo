@@ -8,7 +8,7 @@ export class GameController {
 
 	// Event triggered when this controller finishes a chain and generates garbage
 	public onGarbageSent: g.Trigger<number> = new g.Trigger();
-
+	public onGameOver: g.Trigger<string> = new g.Trigger();
 	private scene: g.Scene;
 	private lastDropTime: number = 0;
 	private readonly DROP_INTERVAL = 1000;
@@ -24,6 +24,9 @@ export class GameController {
 
 	public start() {
 		this.spawnNewPuyo();
+	}
+	public stop() {
+		this.isLocked = true;
 	}
 
 	public update(currentTime: number) {
@@ -54,6 +57,7 @@ export class GameController {
 
 		if (!success) {
 			console.log("GAME OVER");
+			this.onGameOver.fire(this.model.id);
 			this.isLocked = true;
 			return;
 		}

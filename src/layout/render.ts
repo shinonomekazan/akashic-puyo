@@ -6,14 +6,15 @@ import * as al from "@akashic-extension/akashic-label";
 import { E, TextAlign } from "@akashic/akashic-engine";
 import { controller } from "./controller";
 
-export type buttonID = "btnSolo" | "btnPC" | "btnPvP" | "readyCliked";
-
+export type buttonID = "btnSolo" | "btnPC" | "btnPvP" | "readyCliked" | "leave";
+export type endGameState = "win" | "gameOver"
 export interface ISelectMode {
 	onButtonClick: g.Trigger<buttonID>;
 	controller: controller;
 }
 export interface IUIInGame {
 	getLayer(): { gameLayer: g.E, backgroundLayer: g.E };
+	setEndGame(state: endGameState): void;
 }
 export interface IUILobby {
 	showDialogJoinPvP(): void;
@@ -29,6 +30,7 @@ export class render implements ISelectMode, IUILobby, IUIInGame {
 	private loadingWaitOtherContainer: g.E | undefined;
 	private controllerContainer: g.E | undefined;
 	private selectModeContainer: g.E | undefined;
+	private endGameContainer: g.E | undefined;
 	constructor(scene: g.Scene) {
 		this.layout = new layout(scene);
 		this.layout.appendToScene(scene);
@@ -49,6 +51,7 @@ export class render implements ISelectMode, IUILobby, IUIInGame {
 			const scene = this.layout.root.scene;
 			let container = new g.E({
 				scene: scene,
+				local: true,
 			});
 			this.loadingWaitOtherContainer = container;
 			let background = new g.FilledRect({
@@ -101,6 +104,7 @@ export class render implements ISelectMode, IUILobby, IUIInGame {
 			const scene = this.layout.root.scene;
 			let container = new g.E({
 				scene: scene,
+				local: true,
 			});
 			this.loadingContainer = container;
 			let background = new g.FilledRect({
@@ -138,6 +142,7 @@ export class render implements ISelectMode, IUILobby, IUIInGame {
 	private createController() {
 		this.controllerContainer = new g.E({
 			scene: this.layout.root.scene,
+			local: true,
 		});
 		this.controller = new controller(this.controllerContainer);
 		this.layout.uiLayer.append(this.controllerContainer);
@@ -148,6 +153,7 @@ export class render implements ISelectMode, IUILobby, IUIInGame {
 			const scene = this.layout.root.scene;
 			let container = new g.E({
 				scene: scene,
+				local: true,
 			});
 			let label = new g.Label({
 				scene: scene,
@@ -224,6 +230,7 @@ export class render implements ISelectMode, IUILobby, IUIInGame {
 		const scene = this.layout.root.scene;
 		let container = new g.E({
 			scene: scene,
+			local: true,
 		});
 		let background = new g.FilledRect({
 			scene: scene,
@@ -253,6 +260,48 @@ export class render implements ISelectMode, IUILobby, IUIInGame {
 
 		this.layout.uiLayer.append(container);
 
+	}
+	public setEndGame(state: endGameState) {
+		if (this.endGameContainer == undefined) {
+			const scene = this.layout.root.scene;
+			let container = new g.E({
+				scene: scene,
+				local: true,
+			});
+			this.endGameContainer = container;
+			let background = new g.FilledRect({
+				scene: scene,
+				parent: container,
+				height: scene.game.height,
+				width: scene.game.width,
+				cssColor: "black",
+				opacity: 0.85,
+				touchable: true
+			});
+			let t = new al.Label({
+				scene: scene,
+				local: true,
+				font: globalThis.font,
+				fontSize: 40,
+				width: 2000,
+				x: scene.game.width / 2,
+				y: scene.game.height / 2,
+				textAlign: TextAlign.Left,
+				lineBreak: true,
+				widthAutoAdjust: true,
+				parent: background,
+				text: 'xxxxxxxxx.....',
+				textColor: 'white',
+				anchorX: 0.5
+			});
+			let btnCancel = this.createButtonJoinPvP("LEAVE", () => {
+				console.log('goto main menu');
+				this.onButtonClick.fire("leave");
+			});
+			btnCancel.y = scene.game.height / 2 + 100;
+			container.append(btnCancel);
+			this.layout.uiLayer.append(container);
+		}
 	}
 	public test() {
 

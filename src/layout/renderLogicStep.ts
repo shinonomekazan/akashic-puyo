@@ -1,6 +1,6 @@
 import { FlowEventName } from "../flow/eventName";
 import { BaseStep } from "../flow/step";
-import { getSender, initSender, playerGameModeSender, startPvPSender } from "../flow/sender";
+import { gameOverSender, getSender, initSender, playerGameModeSender, startPvPSender } from "../flow/sender";
 import { ISelectMode, IUIInGame, IUILobby } from "./render";
 
 export class renderLogicStep implements BaseStep {
@@ -38,6 +38,17 @@ export class renderLogicStep implements BaseStep {
 					sender.scene = g.game.scene();
 					sender.backgroundLayer = layerInGame.backgroundLayer;
 					sender.gameLayer = layerInGame.gameLayer;
+				}
+				break;
+			case FlowEventName.GameOver:
+				{
+					let sen = getSender(FlowEventName.GameOver) as gameOverSender;
+					this.renderInGame.setEndGame(sen.thisWin ? "win" : "gameOver");
+				}
+				break;
+			case FlowEventName.CleanAndGotoMainMenu:
+				{
+					console.log('UI CLEAN');
 				}
 				break;
 
