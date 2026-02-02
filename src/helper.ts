@@ -123,6 +123,21 @@ export class Helper {
 			}, time);
 		});
 	}
+	static findNodesByTag(node: g.E, targetTag: string, result: g.E[]) {
+		if (!node) return result;
+
+		if (node.tag === targetTag) {
+			result.push(node);
+		}
+
+		if (node.children && Array.isArray(node.children)) {
+			node.children.forEach(child => {
+				Helper.findNodesByTag(child, targetTag, result);
+			});
+		}
+
+		return result;
+	}
 	static newSprite9Slice(
 		path: string,
 		width: number,

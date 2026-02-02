@@ -7,7 +7,7 @@ import { E, TextAlign } from "@akashic/akashic-engine";
 import { controller } from "./controller";
 
 export type buttonID = "btnSolo" | "btnPC" | "btnPvP" | "readyCliked" | "leave";
-export type endGameState = "win" | "gameOver"
+export type endGameState = "none" | "win" | "gameOver"
 export interface ISelectMode {
 	onButtonClick: g.Trigger<buttonID>;
 	controller: controller;
@@ -15,6 +15,7 @@ export interface ISelectMode {
 export interface IUIInGame {
 	getLayer(): { gameLayer: g.E, backgroundLayer: g.E };
 	setEndGame(state: endGameState): void;
+	cleanAndGotoMenu(): Promise<void>;
 }
 export interface IUILobby {
 	showDialogJoinPvP(): void;
@@ -38,6 +39,14 @@ export class render implements ISelectMode, IUILobby, IUIInGame {
 		let bg = Helper.newSprite("/assets/background.png");
 		this.layout.gameBgLayer.append(bg);
 
+	}
+	async cleanAndGotoMenu() {
+		this.setShowLoading(true);
+		this.setEndGame("none");
+		this.controller.layoutRoot.hide();
+		await Helper.waitAsync(1000);
+		this.setShowLoading(false);
+		this.setActiveSelectMode(true);
 	}
 	getLayer(): { gameLayer: E; backgroundLayer: E; } {
 		return {
@@ -148,7 +157,7 @@ export class render implements ISelectMode, IUILobby, IUIInGame {
 		this.layout.uiLayer.append(this.controllerContainer);
 		this.controller.layoutRoot.hide();
 	}
-	public selectMode() {
+	public setActiveSelectMode(isActive: boolean) {
 		if (this.selectModeContainer == undefined) {
 			const scene = this.layout.root.scene;
 			let container = new g.E({
@@ -182,6 +191,11 @@ export class render implements ISelectMode, IUILobby, IUIInGame {
 			container.append(btnPvP);
 			this.layout.uiLayer.append(container);
 			this.selectModeContainer = container;
+		}
+		if (isActive) {
+			this.selectModeContainer.show();
+		} else {
+			this.selectModeContainer.hide();
 		}
 	}
 	private createButtonMode(text: string, onclick: () => void) {
@@ -281,6 +295,7 @@ export class render implements ISelectMode, IUILobby, IUIInGame {
 			let t = new al.Label({
 				scene: scene,
 				local: true,
+				tag: "label",
 				font: globalThis.font,
 				fontSize: 40,
 				width: 2000,
@@ -290,7 +305,7 @@ export class render implements ISelectMode, IUILobby, IUIInGame {
 				lineBreak: true,
 				widthAutoAdjust: true,
 				parent: background,
-				text: 'xxxxxxxxx.....',
+				text: "...",
 				textColor: 'white',
 				anchorX: 0.5
 			});
@@ -301,6 +316,17 @@ export class render implements ISelectMode, IUILobby, IUIInGame {
 			btnCancel.y = scene.game.height / 2 + 100;
 			container.append(btnCancel);
 			this.layout.uiLayer.append(container);
+		}
+
+		if (state == "none") {
+			this.endGameContainer.hide();
+		} else {
+			let find: g.E[] = [];
+			Helper.findNodesByTag(this.layout.uiLayer, "label", find);
+			let label = find[0] as al.Label
+			label.text = state == "gameOver" ? "GameOver" : "You Win";
+			label.invalidate()
+			this.endGameContainer.show();
 		}
 	}
 	public test() {

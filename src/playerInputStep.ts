@@ -28,6 +28,7 @@ export class playerInputStep implements BaseStep {
 						sender.cancel = false;
 						console.log('...', sender)
 						globalThis.flowManager.fireAsync(FlowEventName.StartPvsP, sender);
+						globalThis.flowManager.fireAsync(FlowEventName.ServerNotiOtherPlayerGameOver);
 
 					} else {
 						const modeMap: Partial<Record<buttonID, gameMode>> = {

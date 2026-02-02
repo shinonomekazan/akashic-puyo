@@ -68,11 +68,7 @@ export class clientScene extends g.Scene implements BaseStep {
 
 				this.player1.start();
 				this.player2.start();
-				g.game.onUpdate.add(() => {
-					const currentTime = g.game.age * (1000 / g.game.fps);
-					this.player1.update(currentTime);
-					this.player2.update(currentTime);
-				});
+				g.game.onUpdate.add(this.updateHandler);
 				break;
 			case FlowEventName.Control:
 				{
@@ -90,7 +86,6 @@ export class clientScene extends g.Scene implements BaseStep {
 					}
 					const targetPlayer = (sen.playerId == this.player1.model.id) ? this.player1 : this.player2;
 					targetPlayer.handleInput(sen.controlID);
-					console.log('xxx ', sen);
 				}
 				break;
 			case FlowEventName.GameOver:
@@ -102,19 +97,34 @@ export class clientScene extends g.Scene implements BaseStep {
 			case FlowEventName.CleanAndGotoMainMenu:
 				{
 					console.log('client clean');
+					g.game.onUpdate.remove(this.updateHandler);
+					this.player1.clean();
+					this.player1 = undefined;
+					this.player2.clean();
+					this.player2 = undefined;
+				}
+				break;
+			case FlowEventName.ServerNotiOtherPlayerGameOver:
+				{
+
 				}
 				break;
 			default:
 				console.error("clientScene: unknown event: ", FlowEventName[eventName]);
 		}
 	}
+	private updateHandler = (): void => {
+		const currentTime = g.game.age * (1000 / g.game.fps);
 
+		if (this.player1) this.player1.update(currentTime);
+		if (this.player2) this.player2.update(currentTime);
+	};
 	private onGameLoad() {
 		globalThis.flowManager = new FlowManager();
 		new FlowCreator(globalThis.flowManager, this);
 
 		let myRender = new render(this);
-		myRender.selectMode()
+		myRender.setActiveSelectMode(true)
 		//myRender.test()
 
 

@@ -65,6 +65,12 @@ export class GameBoardView {
 		if (this.ghostPuyoNode && !this.ghostPuyoNode.destroyed()) this.ghostPuyoNode.destroy();
 		if (this.currentPuyoNode && !this.currentPuyoNode.destroyed()) this.currentPuyoNode.destroy();
 		if (this.nuisanceNode && !this.nuisanceNode.destroyed()) this.nuisanceNode.destroy();
+		if (this.nextPuyoDisplayNode && !this.nextPuyoDisplayNode.destroyed()) {
+			this.nextPuyoDisplayNode.destroy();
+		}
+		if (this.font && !this.font.destroyed()) {
+			this.font.destroy();
+		}
 	}
 
 	private getVisualIndex(): number {

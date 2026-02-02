@@ -48,7 +48,7 @@ export class renderLogicStep implements BaseStep {
 				break;
 			case FlowEventName.CleanAndGotoMainMenu:
 				{
-					console.log('UI CLEAN');
+					this.renderInGame.cleanAndGotoMenu();
 				}
 				break;
 

@@ -8,6 +8,7 @@ export enum FlowEventName {
 	Control,
 	OtherControl,
 	GameOver,
+	ServerNotiOtherPlayerGameOver,
 	SceneDestroy,
 	CleanAndGotoMainMenu
 }

@@ -3,4 +3,5 @@ export type gameState =
 	"wait-select-mode" |
 	"wait-serve-respone-sel" |
 	"ready-wait-other" |
-	"playing"
+	"playing" |
+	"gameOver"

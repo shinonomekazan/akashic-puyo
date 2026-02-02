@@ -28,6 +28,20 @@ export class GameController {
 	public stop() {
 		this.isLocked = true;
 	}
+	public clean() {
+		this.stop();
+		if (this.view) {
+			this.view.destroy();
+			this.view = null;
+		}
+
+		if (this.onGarbageSent && !this.onGarbageSent.destroyed()) {
+			this.onGarbageSent.destroy();
+		}
+		if (this.onGameOver && !this.onGameOver.destroyed()) {
+			this.onGameOver.destroy();
+		}
+	}
 
 	public update(currentTime: number) {
 		if (this.isLocked) return;

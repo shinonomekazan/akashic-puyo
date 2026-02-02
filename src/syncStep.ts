@@ -4,12 +4,12 @@ import { controlSender, gameOverSender, getSender, playerGameModeSender, setSend
 import { gameMessage, gameMode, gameOver, gameStart, playerControl, readyClicked, selectMode } from "./messageCode";
 import { gameState } from "./gamesStateType";
 import { Helper } from "./helper";
-import { controlID } from "./layout/controller";
 
 export class syncStep implements BaseStep {
 	private gameState: gameState = "wait-select-mode";
 	private waitReadyResponse: boolean = false;
 	private waitGameStart: boolean = false;
+	private otherPlayerGameOver: boolean = false;
 	private startPvPSender: startPvPSender;
 	async onStep(eventName: FlowEventName): Promise<void> {
 		switch (eventName) {
@@ -50,6 +50,7 @@ export class syncStep implements BaseStep {
 				break;
 			case FlowEventName.StartPvsP:
 				await Helper.waitUntil(() => this.waitGameStart == false)
+				this.otherPlayerGameOver = false;
 				setSender(this.startPvPSender, FlowEventName.StartPvsP);
 				break;
 			case FlowEventName.Control:
@@ -78,6 +79,15 @@ export class syncStep implements BaseStep {
 			case FlowEventName.CleanAndGotoMainMenu:
 				{
 					console.log('sync clean');
+
+				}
+				break;
+			case FlowEventName.ServerNotiOtherPlayerGameOver:
+				{
+					console.log('1 sync step wati game over');
+					await Helper.waitUntil(() => this.otherPlayerGameOver == true)
+					console.log('2 sync step wati game over');
+
 				}
 				break;
 			default:
@@ -85,57 +95,64 @@ export class syncStep implements BaseStep {
 	}
 
 	private _handleMessage(ev: g.MessageEvent): void {
-		if (ev.player.id != null) {//received from serve
+		if (ev.player.id != null) {
 			return
 		}
 		console.log('recive message ', ev);
 		var msg = ev.data as gameMessage;
-		if (msg.type == "readyClicked") {
-			let x = msg.data as readyClicked;
-			if (x.idClicked == g.game.selfId) {
-				this.gameState = "ready-wait-other";
-				this.waitReadyResponse = false;
-			} else {
-				console.log('other ready!');
+		if (msg.type == "gameOver") {
+			let other = msg.data as gameOver;
+			if (g.game.selfId != other.id) {
+				this.otherPlayerGameOver = true;
 			}
 		} else {
-			if (msg.type == "startGamePvP") {
-				let x = msg.data as gameStart;
-				this.startPvPSender = new startPvPSender();
-				this.startPvPSender.cancel = false;
-				this.startPvPSender.seed1 = x.seed1;
-				this.startPvPSender.seed2 = x.seed2;
-				this.startPvPSender.id1 = x.id1;
-				this.startPvPSender.id2 = x.id2;
-				this.waitGameStart = false;
-				this.gameState = "playing";
+			if (msg.type == "readyClicked") {
+				let x = msg.data as readyClicked;
+				if (x.idClicked == g.game.selfId) {
+					this.gameState = "ready-wait-other";
+					this.waitReadyResponse = false;
+				} else {
+					console.log('other ready!');
+				}
 			} else {
-				switch (this.gameState) {
-					case "wait-select-mode":
-					case "wait-serve-respone-sel":
-						let data = ev.data as gameMessage;
-						if (data.type === "selectGameMode") {
-							const mode = data.data as gameMode;
-							console.log('ok switch to mode ', mode);
-							this.gameState = "playing";
-						}
-						break;
-					case "playing":
-						{
+				if (msg.type == "startGamePvP") {
+					let x = msg.data as gameStart;
+					this.startPvPSender = new startPvPSender();
+					this.startPvPSender.cancel = false;
+					this.startPvPSender.seed1 = x.seed1;
+					this.startPvPSender.seed2 = x.seed2;
+					this.startPvPSender.id1 = x.id1;
+					this.startPvPSender.id2 = x.id2;
+					this.waitGameStart = false;
+					this.gameState = "playing";
+				} else {
+					switch (this.gameState) {
+						case "wait-select-mode":
+						case "wait-serve-respone-sel":
 							let data = ev.data as gameMessage;
-							if (data.type === "control") {
-								let c = data.data as playerControl;
-								console.log('consotrllll ', c.playerId);
-								let sen = new controlSender();
-								sen.controlID = c.controlID;
-								sen.playerId = c.playerId;
-								globalThis.flowManager.fire(FlowEventName.OtherControl, sen);
-
+							if (data.type === "selectGameMode") {
+								const mode = data.data as gameMode;
+								console.log('ok switch to mode ', mode);
+								this.gameState = "playing";
 							}
-						}
-						break;
-					default:
-						console.error('unknown wait state: ', this.gameState);
+							break;
+						case "playing":
+							{
+								let data = ev.data as gameMessage;
+								if (data.type === "control") {
+									let c = data.data as playerControl;
+									console.log('consotrllll ', c.playerId);
+									let sen = new controlSender();
+									sen.controlID = c.controlID;
+									sen.playerId = c.playerId;
+									globalThis.flowManager.fire(FlowEventName.OtherControl, sen);
+
+								}
+							}
+							break;
+						default:
+							console.error('unknown wait state: ', this.gameState);
+					}
 				}
 			}
 		}

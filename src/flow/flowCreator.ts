@@ -73,5 +73,10 @@ export class FlowCreator {
 			clientSceneStep,
 			_syncStep,
 		]));
+		this._manager.addFlow(new Flow(FlowEventName.ServerNotiOtherPlayerGameOver, [
+			//_renderStep,
+			//clientSceneStep,
+			_syncStep,
+		]));
 	}
 }
