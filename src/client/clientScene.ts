@@ -20,10 +20,16 @@ export class clientScene extends g.Scene implements BaseStep {
 		param.assetPaths = assetPaths;
 		super(param);
 		this._initialSnapshot = param.snapshot;
+		this.onStateChange.add(e => {
+			if (e == 'before-destroyed') {
+				globalThis.flowManager.fireAsync(FlowEventName.SceneDestroy);
+			}
+		});
 		this.onLoad.add(this.onGameLoad, this);
 	}
 
 	async onStep(eventName: FlowEventName): Promise<void> {
+		console.log('??? ', eventName);
 		switch (eventName) {
 			case FlowEventName.Init:
 				console.log("[clientScene] Init complete.");

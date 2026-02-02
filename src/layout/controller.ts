@@ -4,8 +4,42 @@ export type controlID = "Unknow" | "ArrowLeft" | "ArrowRight" | "ArrowUp" | "Arr
 export class controller {
 	private controllerLayer: g.E;
 	public onControlClick: g.Trigger<controlID> = new g.Trigger();
+	private bindKeydown: any;
+	isActive: boolean;
 	constructor(public layoutRoot: g.E) {
+		console.log('controller constructor');
+		this.isActive = true;
 		this.createUIController();
+		this.regActionByKeyboard();
+	}
+	onDestroy() {
+		window.removeEventListener('keydown', this.bindKeydown);
+	}
+	private regActionByKeyboard() {
+		this.bindKeydown = this.onKey.bind(this);
+		window.addEventListener('keydown', this.bindKeydown);
+	}
+	private onKey(e: KeyboardEvent) {
+		if (e.repeat) return;
+		console.log('key');
+		if (this.isActive == false) {
+			return;
+		}
+		if (e.key == 'ArrowRight' || e.key == "d") {
+			this.onControlClick.fire("ArrowRight");
+		} else {
+			if (e.key == 'ArrowLeft' || e.key == "a") {
+				this.onControlClick.fire("ArrowLeft");
+			} else {
+				if (e.key == 'ArrowUp' || e.key == "w") {
+					this.onControlClick.fire("ArrowUp");
+				} else {
+					if (e.key == 'ArrowDown' || e.key == "s") {
+						this.onControlClick.fire("ArrowDown");
+					}
+				}
+			}
+		}
 	}
 	private createUIController() {
 		const scene = g.game.scene();
@@ -95,7 +129,9 @@ export class controller {
 		btn.scale(scale);
 		btn.modified();
 		btn.onClick.add(() => {
-			this.onControlClick.fire(keyClick as controlID);
+			if (this.isActive) {
+				this.onControlClick.fire(keyClick as controlID);
+			}
 		});
 		return btn;
 	}

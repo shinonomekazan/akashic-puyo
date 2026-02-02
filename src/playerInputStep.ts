@@ -33,7 +33,7 @@ export class playerInputStep implements BaseStep {
 							readyCliked: "readyClicked"
 						};
 						if (modeMap[buttonID] != "pp") {
-
+							console.log('axxx');
 							globalThis.flowManager.fireAsync(FlowEventName.SomeClientSelectMode,
 								new playerGameModeSender(modeMap[buttonID]));
 						}
@@ -44,32 +44,23 @@ export class playerInputStep implements BaseStep {
 					control.controlID = controlID;
 					globalThis.flowManager.fire(FlowEventName.Control, control);
 				});
-				this.playerInput();
 				break;
 			case FlowEventName.StartPvsP:
 				{
-
+					this.render.controller.isActive = true;
+				}
+				break;
+			case FlowEventName.GameOver:
+				{
+					this.render.controller.isActive = false;
+				}
+				break;
+			case FlowEventName.SceneDestroy:
+				{
+					this.render.controller.onDestroy();
 				}
 				break;
 			default:
 		}
-	}
-	private playerInput(): void {
-		window.addEventListener("keydown", (ev) => {
-			let mode = "";
-			switch (ev.key) {
-				case "1":
-					mode = "solo"
-					break;
-				case "2":
-					mode = "pc"
-					break;
-				case "3":
-					mode = "pp"
-					break;
-				default:
-			}
-			globalThis.flowManager.fireAsync(FlowEventName.SomeClientSelectMode, { mode: mode });
-		});
 	}
 }
